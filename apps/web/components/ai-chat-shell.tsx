@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTheme } from "next-themes"
+import Image from "next/image"
 import {
   ArrowUpIcon,
   BellIcon,
@@ -230,7 +231,7 @@ const initialChats: Chat[] = [
   },
   {
     id: "user-pain-points-summary",
-    title: "Resumen de puntos de dolor de usuarios",
+    title: "Resumen de dolor de usuarios",
     group: "Recientes",
     category: "Resumen",
     updatedAt: "8:04 AM",
@@ -592,7 +593,7 @@ const initialKnowledgeSources: KnowledgeSource[] = [
   },
   {
     id: "src-pain",
-    name: "Resumen de puntos de dolor de usuarios.docx",
+    name: "Resumen de dolor de usuarios.docx",
     folderId: "product",
     type: "Doc",
     owner: "Investigación",
@@ -611,7 +612,7 @@ const initialKnowledgeSources: KnowledgeSource[] = [
     ],
     pages: [
       {
-        title: "Resumen de puntos de dolor de usuarios",
+        title: "Resumen de dolor de usuarios",
         eyebrow: "Notas de investigación - página 1",
         sections: [
           {
@@ -1059,9 +1060,12 @@ function TopBar({
           </TooltipTrigger>
           <TooltipContent>Alternar barra lateral</TooltipContent>
         </Tooltip>
-        <img
+        <Image
           src="/logo-sin-fondo.png"
           alt="BSF Almacenes del Perú"
+          width={120}
+          height={36}
+          priority
           className="h-7 w-auto object-contain sm:h-9"
         />
       </div>
@@ -1070,10 +1074,7 @@ function TopBar({
         <ManagerNotifications onViewAll={onOpenNotifications} />
         <TopIcon icon={ThemeIcon} label="Tema" onClick={onToggleTheme} />
 
-        <Separator
-
-          orientation="vertical"
-        />
+        <Separator orientation="vertical" />
         <Avatar className="size-8 sm:size-9">
           <AvatarFallback className="bg-[radial-gradient(circle_at_35%_28%,#f2b0a2_0_22%,#27355f_23%_100%)] text-[0px]">
             TB
