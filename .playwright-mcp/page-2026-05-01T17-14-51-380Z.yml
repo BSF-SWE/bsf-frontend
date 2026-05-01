@@ -1,0 +1,111 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - button "Toggle sidebar" [ref=e5]:
+          - img
+        - group [ref=e6]:
+          - group [ref=e7]:
+            - img [ref=e8]
+          - textbox "Search..." [ref=e11]
+          - group [ref=e12]:
+            - generic: ⌘ k
+      - generic [ref=e13]:
+        - button "Get Pro" [ref=e14]
+        - button "Notifications" [ref=e15]:
+          - img
+        - button "Theme" [ref=e17]:
+          - img
+        - button "Style" [ref=e18]:
+          - img
+        - button "Reactions" [ref=e19]:
+          - img
+        - generic [ref=e21]: TB
+    - generic [ref=e24]:
+      - complementary [ref=e25]:
+        - group [ref=e27]:
+          - group [ref=e28]:
+            - img [ref=e29]
+          - textbox "Search chats..." [ref=e32]
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - heading "Today" [level=2] [ref=e38]
+            - generic [ref=e39]:
+              - button "What's something you've learned recently?" [ref=e40]:
+                - generic [ref=e41]: What's something you've learned recently?
+              - button "Best travel experience" [ref=e42]:
+                - generic [ref=e43]: Best travel experience
+              - button "Favorite book" [ref=e44]:
+                - generic [ref=e45]: Favorite book
+          - generic [ref=e46]:
+            - heading "Yesterday" [level=2] [ref=e47]
+            - button "If you could teleport anywhere..." [ref=e49]:
+              - generic [ref=e50]: If you could teleport anywhere...
+          - generic [ref=e51]:
+            - heading "7 Days Ago" [level=2] [ref=e52]
+            - generic [ref=e53]:
+              - button "What's one goal you want to achieve..." [ref=e54]:
+                - generic [ref=e55]: What's one goal you want to achieve...
+              - button "Favorite programming language" [ref=e56]:
+                - generic [ref=e57]: Favorite programming language
+              - button "Learning new skills" [ref=e58]:
+                - generic [ref=e59]: Learning new skills
+              - button "Weekend plans" [ref=e60]:
+                - generic [ref=e61]: Weekend plans
+              - button "Evening reflections" [ref=e62]:
+                - generic [ref=e63]: Evening reflections
+        - navigation [ref=e64]:
+          - button "Explore" [ref=e65]:
+            - img
+            - text: Explore
+          - button "Library" [ref=e66]:
+            - img
+            - text: Library
+          - button "History" [ref=e67]:
+            - img
+            - text: History
+          - button "Upgrade" [ref=e68]:
+            - img
+            - text: Upgrade
+        - button "New Chat" [ref=e70]:
+          - img
+          - text: New Chat
+      - generic [ref=e72]:
+        - heading "Good Morning, Toby How Can I Assist You Today?" [level=1] [ref=e74]:
+          - text: Good Morning, Toby
+          - generic [ref=e75]: How Can I Assist You Today?
+        - group [ref=e76]:
+          - group [ref=e77]:
+            - generic [ref=e78]:
+              - generic [ref=e79]: Use our faster AI on Pro Plan
+              - generic [ref=e80]: •
+              - button "Upgrade" [ref=e81]
+          - textbox "Ask me anything" [ref=e82]:
+            - /placeholder: Ask me anything...
+          - group [ref=e83]:
+            - button "Attach file" [ref=e84]:
+              - img
+            - button "Claude 3.5 sonnet" [ref=e85]:
+              - img
+              - text: Claude 3.5 sonnet
+              - img
+            - generic [ref=e86]:
+              - button "Voice input" [ref=e87]:
+                - img
+              - button "Send message" [ref=e88]:
+                - img
+        - generic [ref=e89]:
+          - button "Summary" [ref=e90]:
+            - img
+            - text: Summary
+          - button "Code" [ref=e91]:
+            - img
+            - text: Code
+          - button "Design" [ref=e92]:
+            - img
+            - text: Design
+          - button "Research" [ref=e93]:
+            - img
+            - text: Research
+  - button "Open Next.js Dev Tools" [ref=e99] [cursor=pointer]:
+    - img [ref=e100]
