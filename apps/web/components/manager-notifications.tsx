@@ -109,7 +109,7 @@ export function ManagerNotifications({
           {unreadCount > 0 ? (
             <Badge
               aria-hidden
-              className="absolute top-1 right-1 flex size-4 items-center justify-center p-0 text-[10px]"
+              className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center px-1 py-0 text-[10px] leading-none"
               variant="destructive"
             >
               {unreadCount}

@@ -1066,15 +1066,15 @@ function TopBar({
         />
       </div>
 
-      <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+      <div className="ml-auto flex h-full items-center gap-1 sm:gap-1.5">
         <ManagerNotifications onViewAll={onOpenNotifications} />
         <TopIcon icon={ThemeIcon} label="Tema" onClick={onToggleTheme} />
 
         <Separator
-          className="mx-1 hidden h-6 sm:block"
+
           orientation="vertical"
         />
-        <Avatar className="size-8 sm:size-9" size="lg">
+        <Avatar className="size-8 sm:size-9">
           <AvatarFallback className="bg-[radial-gradient(circle_at_35%_28%,#f2b0a2_0_22%,#27355f_23%_100%)] text-[0px]">
             TB
           </AvatarFallback>
