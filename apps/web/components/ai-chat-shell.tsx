@@ -29,6 +29,7 @@ import {
   PlusIcon,
   SearchIcon,
   SmileIcon,
+  SlidersHorizontalIcon,
   SunIcon,
   UploadIcon,
   ZoomInIcon,
@@ -39,7 +40,14 @@ import {
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent } from "@workspace/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +65,14 @@ import {
 } from "@workspace/ui/components/input-group"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { Separator } from "@workspace/ui/components/separator"
 import {
   Sheet,
@@ -86,10 +102,11 @@ import {
 } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
-type ChatGroup = "Recents" | "Yesterday"
+type ChatGroup = "Recientes" | "Ayer"
 type MessageRole = "user" | "assistant"
-type WorkspaceView = "chat" | "knowledge"
+type WorkspaceView = "chat" | "knowledge" | "settings"
 type KnowledgeStatus = "Ready" | "Indexing" | "Review"
+type ThemePreference = "light" | "dark" | "system"
 
 type ChatMessage = {
   id: string
@@ -163,162 +180,166 @@ const models = [defaultModel, "GPT-4.1", "Gemini 1.5 Pro"]
 const initialChats: Chat[] = [
   {
     id: "onboarding-flow-review",
-    title: "Onboarding flow review",
-    group: "Recents",
-    category: "Research",
+    title: "Revisión del flujo de onboarding",
+    group: "Recientes",
+    category: "Investigación",
     updatedAt: "10:42 AM",
     model: "Claude 3.5 sonnet",
     messages: [
       {
         id: "onboarding-flow-review-1",
         role: "user",
-        content: "Review the onboarding flow and call out friction points.",
+        content:
+          "Revisa el flujo de onboarding e identifica los puntos de fricción.",
         at: "10:36 AM",
       },
       {
         id: "onboarding-flow-review-2",
         role: "assistant",
         content:
-          "The main friction is decision density in the first screen. Move secondary setup steps behind progressive disclosure and keep the first action focused on one successful activation moment.",
+          "La principal fricción está en la densidad de decisiones de la primera pantalla. Mueve los pasos secundarios detrás de una divulgación progresiva y enfoca la primera acción en un solo momento de activación exitosa.",
         at: "10:37 AM",
       },
     ],
   },
   {
     id: "activation-metrics-breakdown",
-    title: "Activation metrics breakdown",
-    group: "Recents",
-    category: "Analytics",
+    title: "Desglose de métricas de activación",
+    group: "Recientes",
+    category: "Analítica",
     updatedAt: "9:18 AM",
     model: "GPT-4.1",
     messages: [
       {
         id: "activation-metrics-breakdown-1",
         role: "user",
-        content: "Break down activation metrics for a product dashboard.",
+        content:
+          "Desglosa las métricas de activación para un panel de producto.",
         at: "9:13 AM",
       },
       {
         id: "activation-metrics-breakdown-2",
         role: "assistant",
         content:
-          "Track activation as a funnel: account created, first key action completed, integration connected, and successful return visit within seven days.",
+          "Mide la activación como un embudo: cuenta creada, primera acción clave completada, integración conectada y visita de retorno exitosa dentro de siete días.",
         at: "9:14 AM",
       },
     ],
   },
   {
     id: "user-pain-points-summary",
-    title: "User pain points summary",
-    group: "Recents",
-    category: "Summary",
+    title: "Resumen de puntos de dolor de usuarios",
+    group: "Recientes",
+    category: "Resumen",
     updatedAt: "8:04 AM",
     model: "Claude 3.5 sonnet",
     messages: [
       {
         id: "user-pain-points-summary-1",
         role: "user",
-        content: "Summarize the top user pain points from interview notes.",
+        content:
+          "Resume los principales puntos de dolor de usuarios a partir de notas de entrevistas.",
         at: "8:01 AM",
       },
       {
         id: "user-pain-points-summary-2",
         role: "assistant",
         content:
-          "The strongest patterns are unclear setup expectations, low confidence in imported data, and too many settings before users see their first useful result.",
+          "Los patrones más fuertes son expectativas de configuración poco claras, baja confianza en los datos importados y demasiados ajustes antes de que los usuarios vean su primer resultado útil.",
         at: "8:02 AM",
       },
     ],
   },
   {
     id: "product-roadmap-audit",
-    title: "Product roadmap audit",
-    group: "Yesterday",
-    category: "Planning",
-    updatedAt: "Yesterday",
+    title: "Auditoría del roadmap de producto",
+    group: "Ayer",
+    category: "Planificación",
+    updatedAt: "Ayer",
     model: "Gemini 1.5 Pro",
     messages: [
       {
         id: "product-roadmap-audit-1",
         role: "user",
-        content: "Audit this roadmap and identify sequencing risks.",
-        at: "Yesterday",
+        content: "Audita este roadmap e identifica riesgos de secuenciación.",
+        at: "Ayer",
       },
       {
         id: "product-roadmap-audit-2",
         role: "assistant",
         content:
-          "The roadmap is strongest where foundational data work precedes automation. The risky items are customer-facing AI features scheduled before quality instrumentation is finished.",
-        at: "Yesterday",
+          "El roadmap es más sólido cuando el trabajo fundacional de datos va antes de la automatización. Lo riesgoso son las funcionalidades de IA orientadas a clientes planificadas antes de terminar la instrumentación de calidad.",
+        at: "Ayer",
       },
     ],
   },
   {
     id: "bug-reports-triage",
-    title: "Bug reports triage",
-    group: "Yesterday",
-    category: "Code",
-    updatedAt: "Yesterday",
+    title: "Triage de reportes de errores",
+    group: "Ayer",
+    category: "Código",
+    updatedAt: "Ayer",
     model: "Claude 3.5 sonnet",
     messages: [
       {
         id: "bug-reports-triage-1",
         role: "user",
-        content: "Triage these bug reports into priority buckets.",
-        at: "Yesterday",
+        content: "Clasifica estos reportes de errores por prioridad.",
+        at: "Ayer",
       },
       {
         id: "bug-reports-triage-2",
         role: "assistant",
         content:
-          "Prioritize login blockers and payment state mismatches first, then visual regressions, then copy and empty-state issues.",
-        at: "Yesterday",
+          "Prioriza primero bloqueadores de login y desajustes en el estado de pagos, luego regresiones visuales y finalmente problemas de copy y estados vacíos.",
+        at: "Ayer",
       },
     ],
   },
   {
     id: "competitive-analysis",
-    title: "Competitive analysis",
-    group: "Yesterday",
-    category: "Research",
-    updatedAt: "Yesterday",
+    title: "Análisis competitivo",
+    group: "Ayer",
+    category: "Investigación",
+    updatedAt: "Ayer",
     model: "GPT-4.1",
     messages: [
       {
         id: "competitive-analysis-1",
         role: "user",
-        content: "Compare the onboarding and pricing pages from competitors.",
-        at: "Yesterday",
+        content: "Compara las páginas de onboarding y precios de competidores.",
+        at: "Ayer",
       },
       {
         id: "competitive-analysis-2",
         role: "assistant",
         content:
-          "Competitors win on concise setup promises and clearer upgrade triggers. The opportunity is to show time-to-value earlier, before plan comparison.",
-        at: "Yesterday",
+          "Los competidores ganan con promesas de configuración concisas y disparadores de upgrade más claros. La oportunidad está en mostrar el tiempo hasta el valor antes de la comparación de planes.",
+        at: "Ayer",
       },
     ],
   },
   {
     id: "feature-prioritization",
-    title: "Feature prioritization",
-    group: "Yesterday",
-    category: "Strategy",
-    updatedAt: "Yesterday",
+    title: "Priorización de funcionalidades",
+    group: "Ayer",
+    category: "Estrategia",
+    updatedAt: "Ayer",
     model: "Claude 3.5 sonnet",
     messages: [
       {
         id: "feature-prioritization-1",
         role: "user",
-        content: "Prioritize this feature list for the next sprint.",
-        at: "Yesterday",
+        content:
+          "Prioriza esta lista de funcionalidades para el próximo sprint.",
+        at: "Ayer",
       },
       {
         id: "feature-prioritization-2",
         role: "assistant",
         content:
-          "Rank by user impact and implementation confidence: fix activation blockers, improve import review, then add advanced filters after the core journey is stable.",
-        at: "Yesterday",
+          "Ordena por impacto en usuarios y confianza de implementación: corrige bloqueadores de activación, mejora la revisión de importaciones y después agrega filtros avanzados cuando el flujo principal esté estable.",
+        at: "Ayer",
       },
     ],
   },
@@ -326,337 +347,349 @@ const initialChats: Chat[] = [
 
 const promptActions: PromptAction[] = [
   {
-    label: "Summary",
+    label: "Resumen",
     icon: BrainCircuitIcon,
     prompt:
-      "Summarize this chat into decisions, open questions, and next steps.",
+      "Resume este chat en decisiones, preguntas abiertas y próximos pasos.",
   },
   {
-    label: "Code",
+    label: "Código",
     icon: Code2Icon,
-    prompt: "Write a clean React component for this idea with typed props.",
+    prompt:
+      "Escribe un componente React limpio para esta idea con props tipadas.",
   },
   {
-    label: "Design",
+    label: "Diseño",
     icon: PaletteIcon,
-    prompt: "Create three UI directions and recommend the strongest one.",
+    prompt: "Crea tres direcciones de UI y recomienda la más sólida.",
   },
   {
-    label: "Research",
+    label: "Investigación",
     icon: Globe2Icon,
-    prompt: "Research this topic and organize the answer by confidence level.",
+    prompt:
+      "Investiga este tema y organiza la respuesta por nivel de confianza.",
   },
 ]
 
 const sidebarTools: PromptAction[] = [
   {
-    label: "Research & Analysis",
+    label: "Investigación y análisis",
     icon: FlaskConicalIcon,
     prompt:
-      "Analyze this topic with a research lens: summarize evidence, risks, opportunities, and recommended next steps.",
+      "Analiza este tema con un enfoque de investigación: resume evidencias, riesgos, oportunidades y próximos pasos recomendados.",
   },
   {
-    label: "Web Search",
+    label: "Búsqueda web",
     icon: Globe2Icon,
     prompt:
-      "Prepare a web search brief: query plan, expected sources, and a concise synthesis format.",
+      "Prepara un brief de búsqueda web: plan de consultas, fuentes esperadas y formato de síntesis conciso.",
   },
 ]
 
-const groupOrder: ChatGroup[] = ["Recents", "Yesterday"]
+const groupOrder: ChatGroup[] = ["Recientes", "Ayer"]
 
 const knowledgeFolders: KnowledgeFolder[] = [
   {
     id: "all",
-    name: "All resources",
-    description: "Everything uploaded by your teams.",
+    name: "Todos los recursos",
+    description: "Todo lo cargado por tus equipos.",
   },
   {
     id: "product",
-    name: "Product",
-    description: "Research, roadmaps, customer feedback.",
+    name: "Producto",
+    description: "Investigación, roadmaps y feedback de clientes.",
   },
   {
     id: "support",
-    name: "Support",
-    description: "Tickets, bug reports, escalations.",
+    name: "Soporte",
+    description: "Tickets, errores y escalaciones.",
   },
   {
     id: "market",
-    name: "Market",
-    description: "Competitors, pricing, positioning.",
+    name: "Mercado",
+    description: "Competidores, precios y posicionamiento.",
   },
 ]
 
 const initialKnowledgeSources: KnowledgeSource[] = [
   {
     id: "src-onboarding",
-    name: "Onboarding interview synthesis.pdf",
+    name: "Síntesis de entrevistas de onboarding.pdf",
     folderId: "product",
     type: "PDF",
-    owner: "Research",
+    owner: "Investigación",
     status: "Ready",
-    updatedAt: "Today",
+    updatedAt: "Hoy",
     size: "4.8 MB",
     chunks: 248,
     coverage: 96,
-    tags: ["activation", "friction"],
+    tags: ["activación", "fricción"],
     summary:
-      "Executive synthesis of onboarding interviews with the clearest friction points and recommended activation fixes.",
+      "Síntesis ejecutiva de entrevistas de onboarding con los puntos de fricción más claros y correcciones de activación recomendadas.",
     preview: [
-      "Users understand the product promise, but hesitate when setup asks for too many decisions before the first result.",
-      "The most repeated blocker is uncertainty around imported data quality and what happens after connecting a source.",
-      "Recommendation: move advanced setup behind a secondary step and show a first useful dashboard state sooner.",
+      "Los usuarios entienden la promesa del producto, pero dudan cuando la configuración exige demasiadas decisiones antes del primer resultado.",
+      "El bloqueador más repetido es la incertidumbre sobre la calidad de los datos importados y qué sucede después de conectar una fuente.",
+      "Recomendación: mover la configuración avanzada a un paso secundario y mostrar antes un primer estado útil del panel.",
     ],
     pages: [
       {
-        title: "Onboarding Interview Synthesis",
-        eyebrow: "Executive summary - page 1",
+        title: "Síntesis de entrevistas de onboarding",
+        eyebrow: "Resumen ejecutivo - página 1",
         sections: [
           {
-            heading: "Main observation",
-            body: "Users understand the product promise, but hesitate when setup asks for too many decisions before the first useful result appears.",
+            heading: "Observación principal",
+            body: "Los usuarios entienden la promesa del producto, pero dudan cuando la configuración pide demasiadas decisiones antes de mostrar el primer resultado útil.",
           },
           {
-            heading: "Repeated blocker",
-            body: "The most repeated blocker is uncertainty around imported data quality and what happens after connecting a source.",
+            heading: "Bloqueador repetido",
+            body: "El bloqueador más repetido es la incertidumbre sobre la calidad de los datos importados y lo que ocurre después de conectar una fuente.",
           },
           {
-            heading: "Manager takeaway",
-            body: "Activation improves when the first screen confirms ownership, data status, and the next visible outcome in plain language.",
+            heading: "Conclusión para managers",
+            body: "La activación mejora cuando la primera pantalla confirma propiedad, estado de datos y el siguiente resultado visible con lenguaje claro.",
           },
         ],
         callout:
-          "Recommendation: move advanced setup behind a secondary step and show a first useful dashboard state sooner.",
+          "Recomendación: mover la configuración avanzada a un paso secundario y mostrar antes un primer estado útil del panel.",
       },
       {
-        title: "Recommended Activation Fixes",
-        eyebrow: "Action notes - page 2",
+        title: "Correcciones de activación recomendadas",
+        eyebrow: "Notas de acción - página 2",
         sections: [
           {
-            heading: "Simplify setup",
-            body: "Keep the initial path focused on one connected source, one clear completion state, and one primary action for the user.",
+            heading: "Simplificar configuración",
+            body: "Mantén el camino inicial enfocado en una sola fuente conectada, un estado de finalización claro y una acción principal para el usuario.",
           },
           {
-            heading: "Build confidence",
-            body: "Show which data was imported, where it came from, and who can approve the first view before the broader team sees it.",
+            heading: "Generar confianza",
+            body: "Muestra qué datos se importaron, de dónde vienen y quién puede aprobar la primera vista antes de que la vea el equipo ampliado.",
           },
           {
-            heading: "Leadership decision",
-            body: "Approve a staged rollout that starts with fewer configuration choices and adds advanced controls after activation.",
+            heading: "Decisión de liderazgo",
+            body: "Aprueba un despliegue por etapas que comience con menos opciones de configuración y agregue controles avanzados después de la activación.",
           },
         ],
       },
     ],
     recommendedUse:
-      "Use for onboarding reviews, activation planning, and customer journey discussions.",
+      "Úsalo para revisiones de onboarding, planificación de activación y discusiones del recorrido del cliente.",
   },
   {
     id: "src-roadmap",
-    name: "Q2 roadmap audit.docx",
+    name: "Auditoría de roadmap Q2.docx",
     folderId: "product",
     type: "Doc",
-    owner: "Product",
+    owner: "Producto",
     status: "Ready",
-    updatedAt: "Yesterday",
+    updatedAt: "Ayer",
     size: "1.2 MB",
     chunks: 86,
     coverage: 91,
-    tags: ["roadmap", "risk"],
+    tags: ["roadmap", "riesgo"],
     summary:
-      "Roadmap review for leadership planning, with sequencing risks and dependency notes.",
+      "Revisión de roadmap para planificación de liderazgo, con riesgos de secuenciación y notas de dependencias.",
     preview: [
-      "The roadmap is strongest where data quality work comes before customer-facing automation.",
-      "Two initiatives should be delayed until instrumentation is complete: AI recommendations and workflow templates.",
-      "Recommendation: approve the foundation work first, then revisit customer-facing launch timing.",
+      "El roadmap es más sólido donde el trabajo de calidad de datos va antes de la automatización orientada al cliente.",
+      "Dos iniciativas deben retrasarse hasta completar la instrumentación: recomendaciones de IA y plantillas de flujo.",
+      "Recomendación: aprobar primero el trabajo de base y luego revisar tiempos de lanzamiento orientados al cliente.",
     ],
     pages: [
       {
-        title: "Q2 Roadmap Audit",
-        eyebrow: "Leadership review - page 1",
+        title: "Auditoría de roadmap Q2",
+        eyebrow: "Revisión de liderazgo - página 1",
         sections: [
           {
-            heading: "Sequence strength",
-            body: "The roadmap is strongest where data quality work comes before customer-facing automation and reporting improvements.",
+            heading: "Fortaleza de secuencia",
+            body: "El roadmap es más sólido donde el trabajo de calidad de datos va antes de la automatización orientada al cliente y mejoras de reporting.",
           },
           {
-            heading: "Launch risk",
-            body: "AI recommendations and workflow templates depend on instrumentation that is still not reliable enough for customer rollout.",
+            heading: "Riesgo de lanzamiento",
+            body: "Las recomendaciones de IA y plantillas de flujo dependen de una instrumentación que aún no es lo suficientemente confiable para salida a clientes.",
           },
           {
-            heading: "Operational note",
-            body: "Managers should verify owner accountability before approving work that crosses support, product, and data teams.",
+            heading: "Nota operativa",
+            body: "Los managers deben verificar responsables antes de aprobar trabajo que cruza soporte, producto y equipos de datos.",
           },
         ],
         callout:
-          "Recommendation: approve the foundation work first, then revisit customer-facing launch timing.",
+          "Recomendación: aprobar primero el trabajo de base y luego revisar tiempos de lanzamiento orientados al cliente.",
       },
       {
-        title: "Dependency Review",
-        eyebrow: "Planning appendix - page 2",
+        title: "Revisión de dependencias",
+        eyebrow: "Apéndice de planificación - página 2",
         sections: [
           {
-            heading: "Required before launch",
-            body: "Event quality checks, import confidence scoring, and escalation routing should be complete before the next feature milestone.",
+            heading: "Requerido antes del lanzamiento",
+            body: "Las verificaciones de calidad de eventos, scoring de confianza de importación y ruteo de escalaciones deben completarse antes del siguiente hito.",
           },
           {
-            heading: "Decision checkpoint",
-            body: "A mid-quarter review should compare instrumentation readiness against launch commitments and update the roadmap if needed.",
+            heading: "Punto de control de decisión",
+            body: "Una revisión de mitad de trimestre debe comparar la preparación de instrumentación con los compromisos de lanzamiento y actualizar el roadmap si hace falta.",
           },
         ],
       },
     ],
     recommendedUse:
-      "Use for roadmap meetings, quarterly planning, and dependency checks.",
+      "Úsalo para reuniones de roadmap, planificación trimestral y revisión de dependencias.",
   },
   {
     id: "src-support",
-    name: "Bug reports triage export.csv",
+    name: "Exportación de triage de errores.csv",
     folderId: "support",
     type: "CSV",
-    owner: "Support",
+    owner: "Soporte",
     status: "Indexing",
-    updatedAt: "2h ago",
+    updatedAt: "hace 2 h",
     size: "980 KB",
     chunks: 134,
     coverage: 64,
-    tags: ["bugs", "priority"],
+    tags: ["errores", "prioridad"],
     summary:
-      "Support export grouped by priority so managers can separate blockers from cleanup work.",
+      "Exportación de soporte agrupada por prioridad para que managers separen bloqueadores de tareas de limpieza.",
     preview: [
-      "Critical issues are concentrated in login recovery, payment status mismatch, and import failures.",
-      "Medium-priority reports are mostly visual regressions and unclear empty-state messages.",
-      "Recommendation: review the critical bucket before approving the next release window.",
+      "Los problemas críticos se concentran en recuperación de login, desajustes de estado de pagos y fallos de importación.",
+      "Los reportes de prioridad media son principalmente regresiones visuales y mensajes de estado vacío poco claros.",
+      "Recomendación: revisar el bloque crítico antes de aprobar la siguiente ventana de release.",
     ],
     pages: [
       {
-        title: "Bug Reports Triage Export",
-        eyebrow: "Support export - sheet 1",
+        title: "Exportación de triage de errores",
+        eyebrow: "Exportación de soporte - hoja 1",
         sections: [
           {
-            heading: "Priority summary",
-            body: "Critical issues are concentrated in login recovery, payment status mismatch, and import failures.",
+            heading: "Resumen de prioridad",
+            body: "Los problemas críticos se concentran en recuperación de login, desajustes de estado de pagos y fallos de importación.",
           },
         ],
         table: {
-          headers: ["Priority", "Issue", "Owner", "Count"],
+          headers: ["Prioridad", "Problema", "Responsable", "Cantidad"],
           rows: [
-            ["Critical", "Login recovery fails after reset", "Support", "18"],
-            ["Critical", "Payment status mismatch", "Billing", "12"],
-            ["High", "Import stalls on large CSV", "Data Ops", "9"],
-            ["Medium", "Empty-state copy unclear", "Product", "21"],
-            ["Low", "Visual regression in settings", "Design", "14"],
+            [
+              "Crítica",
+              "Falla recuperación de login tras reset",
+              "Soporte",
+              "18",
+            ],
+            ["Crítica", "Desajuste en estado de pagos", "Facturación", "12"],
+            [
+              "Alta",
+              "Importación se detiene en CSV grande",
+              "Operaciones de datos",
+              "9",
+            ],
+            ["Media", "Copy de estado vacío poco claro", "Producto", "21"],
+            ["Baja", "Regresión visual en ajustes", "Diseño", "14"],
           ],
         },
         callout:
-          "Recommendation: review the critical bucket before approving the next release window.",
+          "Recomendación: revisar el bloque crítico antes de aprobar la siguiente ventana de release.",
       },
     ],
     recommendedUse:
-      "Use for support syncs, release readiness, and escalation review.",
+      "Úsalo para sincronizaciones de soporte, preparación de release y revisión de escalaciones.",
   },
   {
     id: "src-pain",
-    name: "User pain points summary.docx",
+    name: "Resumen de puntos de dolor de usuarios.docx",
     folderId: "product",
     type: "Doc",
-    owner: "Research",
+    owner: "Investigación",
     status: "Review",
-    updatedAt: "Mon",
+    updatedAt: "Lun",
     size: "740 KB",
     chunks: 52,
     coverage: 72,
     tags: ["ux", "feedback"],
     summary:
-      "Concise summary of customer pain points from interviews and feedback notes.",
+      "Resumen conciso de puntos de dolor de clientes a partir de entrevistas y notas de feedback.",
     preview: [
-      "The top pain points are unclear setup expectations, low confidence in imported data, and crowded settings.",
-      "Managers asked for clearer ownership, fewer manual checks, and faster visibility into useful outcomes.",
-      "Recommendation: validate the summary with the research owner before using it in planning.",
+      "Los principales puntos de dolor son expectativas de configuración poco claras, baja confianza en datos importados y demasiados ajustes.",
+      "Los managers pidieron mayor claridad de responsables, menos verificaciones manuales y visibilidad más rápida de resultados útiles.",
+      "Recomendación: validar el resumen con el responsable de investigación antes de usarlo en planificación.",
     ],
     pages: [
       {
-        title: "User Pain Points Summary",
-        eyebrow: "Research notes - page 1",
+        title: "Resumen de puntos de dolor de usuarios",
+        eyebrow: "Notas de investigación - página 1",
         sections: [
           {
-            heading: "Top themes",
-            body: "The top pain points are unclear setup expectations, low confidence in imported data, and crowded settings.",
+            heading: "Temas principales",
+            body: "Los principales puntos de dolor son expectativas de configuración poco claras, baja confianza en datos importados y demasiados ajustes.",
           },
           {
-            heading: "Manager feedback",
-            body: "Managers asked for clearer ownership, fewer manual checks, and faster visibility into useful outcomes.",
+            heading: "Feedback de managers",
+            body: "Los managers pidieron mayor claridad de responsables, menos verificaciones manuales y visibilidad más rápida de resultados útiles.",
           },
           {
-            heading: "Review note",
-            body: "The research owner should confirm whether these themes are representative before leadership planning uses them.",
+            heading: "Nota de revisión",
+            body: "El responsable de investigación debe confirmar si estos temas son representativos antes de usarlos en planificación de liderazgo.",
           },
         ],
         callout:
-          "Recommendation: validate the summary with the research owner before using it in planning.",
+          "Recomendación: validar el resumen con el responsable de investigación antes de usarlo en planificación.",
       },
       {
-        title: "Opportunity Areas",
-        eyebrow: "Research notes - page 2",
+        title: "Áreas de oportunidad",
+        eyebrow: "Notas de investigación - página 2",
         sections: [
           {
-            heading: "Reduce manual checking",
-            body: "Teams need a clearer way to see what changed, who approved the resource, and what needs follow-up.",
+            heading: "Reducir verificaciones manuales",
+            body: "Los equipos necesitan una forma más clara de ver qué cambió, quién aprobó el recurso y qué requiere seguimiento.",
           },
           {
-            heading: "Improve first review",
-            body: "A short manager-friendly summary should appear before detailed settings so decisions can happen quickly.",
+            heading: "Mejorar la primera revisión",
+            body: "Debe aparecer un resumen breve, amigable para managers, antes de los ajustes detallados para acelerar decisiones.",
           },
         ],
       },
     ],
     recommendedUse:
-      "Use for UX prioritization, team alignment, and opportunity sizing.",
+      "Úsalo para priorización UX, alineación de equipos y dimensionamiento de oportunidades.",
   },
   {
     id: "src-competitors",
-    name: "Competitive analysis snapshot.url",
+    name: "Snapshot de análisis competitivo.url",
     folderId: "market",
     type: "URL",
-    owner: "Growth",
+    owner: "Crecimiento",
     status: "Ready",
-    updatedAt: "Fri",
+    updatedAt: "Vie",
     size: "18 pages",
     chunks: 119,
     coverage: 88,
-    tags: ["pricing", "positioning"],
+    tags: ["precios", "posicionamiento"],
     summary:
-      "Market snapshot comparing competitor onboarding, pricing language, and conversion triggers.",
+      "Snapshot de mercado que compara onboarding de competidores, lenguaje de precios y disparadores de conversión.",
     preview: [
-      "Competitors communicate time-to-value earlier and keep plan comparison more focused.",
-      "Upgrade prompts are strongest when connected to a completed workflow, not a generic feature list.",
-      "Recommendation: use these notes to refine packaging language and trial conversion moments.",
+      "Los competidores comunican el tiempo hasta el valor más temprano y mantienen más enfocada la comparación de planes.",
+      "Los prompts de upgrade funcionan mejor cuando se conectan a un flujo completado, no a una lista genérica de funcionalidades.",
+      "Recomendación: usar estas notas para refinar lenguaje de empaquetado y momentos de conversión de trial.",
     ],
     pages: [
       {
-        title: "Competitive Analysis Snapshot",
-        eyebrow: "Website capture - page 1",
+        title: "Snapshot de análisis competitivo",
+        eyebrow: "Captura web - página 1",
         url: "https://competitor.example/pricing",
         sections: [
           {
-            heading: "Positioning pattern",
-            body: "Competitors communicate time-to-value earlier and keep plan comparison more focused.",
+            heading: "Patrón de posicionamiento",
+            body: "Los competidores comunican el tiempo hasta el valor más temprano y mantienen más enfocada la comparación de planes.",
           },
           {
-            heading: "Conversion trigger",
-            body: "Upgrade prompts are strongest when connected to a completed workflow, not a generic feature list.",
+            heading: "Disparador de conversión",
+            body: "Los prompts de upgrade funcionan mejor cuando se conectan a un flujo completado, no a una lista genérica de funcionalidades.",
           },
           {
-            heading: "Packaging note",
-            body: "The clearest pages use fewer plan dimensions and anchor value around operational confidence.",
+            heading: "Nota de empaquetado",
+            body: "Las páginas más claras usan menos dimensiones de planes y anclan el valor en la confianza operativa.",
           },
         ],
         callout:
-          "Recommendation: use these notes to refine packaging language and trial conversion moments.",
+          "Recomendación: usar estas notas para refinar lenguaje de empaquetado y momentos de conversión de trial.",
       },
     ],
     recommendedUse:
-      "Use for GTM reviews, positioning work, and pricing discussions.",
+      "Úsalo para revisiones GTM, trabajo de posicionamiento y discusiones de precios.",
   },
 ]
 
@@ -665,7 +698,7 @@ function makeId(prefix: string) {
 }
 
 function makeTime() {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("es", {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date())
@@ -689,30 +722,38 @@ function makeMockReply(
 ) {
   const attachmentText =
     attachments > 0
-      ? ` I also accounted for ${attachments} mock attachment${attachments === 1 ? "" : "s"}.`
+      ? ` También consideré ${attachments} archivo${attachments === 1 ? "" : "s"} de prueba.`
       : ""
 
-  if (mode === "Code") {
-    return `Using ${model}, I would turn this into a small, typed implementation: define the data model first, keep the UI state local, and make every control update the mock dataset immediately.${attachmentText}`
+  if (mode === "Código") {
+    return `Con ${model}, lo convertiría en una implementación pequeña y tipada: define primero el modelo de datos, mantén el estado de UI local y haz que cada control actualice de inmediato el dataset de prueba.${attachmentText}`
   }
 
-  if (mode === "Design") {
-    return `Using ${model}, the strongest direction is a compact workspace: tighter history rows, clear active state, and a responsive composer that keeps the primary action reachable on mobile.${attachmentText}`
+  if (mode === "Diseño") {
+    return `Con ${model}, la dirección más sólida es un espacio de trabajo compacto: filas de historial más ajustadas, estado activo claro y un compositor responsive que mantenga la acción principal al alcance en móvil.${attachmentText}`
   }
 
-  if (mode === "Research") {
-    return `Using ${model}, I would separate confirmed facts, likely assumptions, and follow-up checks. For this mock, the key answer is: ${content}.${attachmentText}`
+  if (mode === "Investigación") {
+    return `Con ${model}, separaría hechos confirmados, supuestos probables y verificaciones de seguimiento. Para esta simulación, la respuesta clave es: ${content}.${attachmentText}`
   }
 
-  if (mode === "Summary") {
-    return `Summary from ${model}: the request is to keep the interaction functional, reduce sidebar visual weight, and preserve the AI chat layout across desktop and mobile.${attachmentText}`
+  if (mode === "Resumen") {
+    return `Resumen de ${model}: la solicitud es mantener la interacción funcional, reducir el peso visual de la barra lateral y conservar el layout del chat AI en desktop y móvil.${attachmentText}`
   }
 
-  return `Using ${model}, here is a practical response: start with the main intent, keep the answer concise, and turn the next action into something the interface can do immediately.${attachmentText}`
+  return `Con ${model}, aquí tienes una respuesta práctica: comienza por la intención principal, mantén la respuesta concisa y convierte la siguiente acción en algo que la interfaz pueda ejecutar de inmediato.${attachmentText}`
+}
+
+function normalizeThemePreference(value: string | undefined): ThemePreference {
+  if (value === "light" || value === "dark" || value === "system") {
+    return value
+  }
+
+  return "system"
 }
 
 export function AiChatShell() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme, theme } = useTheme()
   const [chats, setChats] = React.useState<Chat[]>(initialChats)
   const [selectedChatId, setSelectedChatId] = React.useState<string | null>(
     null
@@ -814,6 +855,11 @@ export function AiChatShell() {
     setMobileSidebarOpen(false)
   }
 
+  function handleOpenSettings() {
+    setActiveView("settings")
+    setMobileSidebarOpen(false)
+  }
+
   function handleAttach() {
     setAttachments((value) => value + 1)
     requestAnimationFrame(() => draftRef.current?.focus())
@@ -850,7 +896,7 @@ export function AiChatShell() {
           chat.id === selectedChatId
             ? {
                 ...chat,
-                group: "Recents",
+                group: "Recientes",
                 model,
                 updatedAt: timestamp,
                 messages: [...chat.messages, ...messages],
@@ -865,7 +911,7 @@ export function AiChatShell() {
         {
           id,
           title: makeTitle(content),
-          group: "Recents",
+          group: "Recientes",
           category: mode,
           updatedAt: timestamp,
           model,
@@ -913,6 +959,7 @@ export function AiChatShell() {
                 chats={filteredChats}
                 onNewChat={handleNewChat}
                 onOpenKnowledgeBase={handleOpenKnowledgeBase}
+                onOpenSettings={handleOpenSettings}
                 onPrompt={handlePrompt}
                 onSearchChange={setChatQuery}
                 onSelectChat={handleSelectChat}
@@ -933,10 +980,12 @@ export function AiChatShell() {
               onNewChat={handleNewChat}
               onPrompt={handlePrompt}
               onSend={handleSend}
+              onThemeChange={setTheme}
               onTogglePro={() => setIsPro((value) => !value)}
               onToggleVoice={() => setVoiceEnabled((value) => !value)}
               promptActions={promptActions}
               textareaRef={draftRef}
+              themePreference={normalizeThemePreference(theme)}
               voiceEnabled={voiceEnabled}
             />
           </CardContent>
@@ -949,8 +998,10 @@ export function AiChatShell() {
           side="left"
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Chat history</SheetTitle>
-            <SheetDescription>Search and select mock chats.</SheetDescription>
+            <SheetTitle>Historial de chats</SheetTitle>
+            <SheetDescription>
+              Busca y selecciona chats de prueba.
+            </SheetDescription>
           </SheetHeader>
           <HistoryPanel
             activeView={activeView}
@@ -959,6 +1010,7 @@ export function AiChatShell() {
             mobile
             onNewChat={handleNewChat}
             onOpenKnowledgeBase={handleOpenKnowledgeBase}
+            onOpenSettings={handleOpenSettings}
             onPrompt={handlePrompt}
             onSearchChange={setChatQuery}
             onSelectChat={handleSelectChat}
@@ -993,7 +1045,13 @@ function TopBar({
   searchRef: React.RefObject<HTMLInputElement | null>
   theme?: string
 }) {
-  const ThemeIcon = theme === "dark" ? SunIcon : MoonIcon
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const ThemeIcon = mounted && theme === "dark" ? SunIcon : MoonIcon
 
   return (
     <header className="flex h-[3.25rem] items-center border-b bg-background px-3 sm:h-14 sm:px-4">
@@ -1001,7 +1059,7 @@ function TopBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              aria-label="Toggle sidebar"
+              aria-label="Alternar barra lateral"
               onClick={onToggleSidebar}
               size="icon-sm"
               variant="ghost"
@@ -1009,7 +1067,7 @@ function TopBar({
               <PanelLeftIcon />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Toggle sidebar</TooltipContent>
+          <TooltipContent>Alternar barra lateral</TooltipContent>
         </Tooltip>
         <Separator className="hidden h-6 sm:block" orientation="vertical" />
         <InputGroup className="h-9 w-[min(370px,48vw)] rounded-md bg-background shadow-sm max-[520px]:hidden">
@@ -1018,7 +1076,7 @@ function TopBar({
           </InputGroupAddon>
           <InputGroupInput
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search..."
+            placeholder="Buscar..."
             ref={searchRef}
             value={chatQuery}
           />
@@ -1035,17 +1093,17 @@ function TopBar({
           size="sm"
           variant="ghost"
         >
-          {isPro ? "Pro Active" : "Get Pro"}
+          {isPro ? "Pro activo" : "Obtener Pro"}
         </Button>
         <TopIcon
           badgeCount={notificationCount}
           icon={BellIcon}
-          label="Notifications"
+          label="Notificaciones"
           onClick={onClearNotifications}
         />
-        <TopIcon icon={ThemeIcon} label="Theme" onClick={onToggleTheme} />
-        <TopIcon icon={PaintbrushIcon} label="Style" />
-        <TopIcon icon={SmileIcon} label="Reactions" />
+        <TopIcon icon={ThemeIcon} label="Tema" onClick={onToggleTheme} />
+        <TopIcon icon={PaintbrushIcon} label="Estilo" />
+        <TopIcon icon={SmileIcon} label="Reacciones" />
         <Separator
           className="mx-1 hidden h-6 sm:block"
           orientation="vertical"
@@ -1097,6 +1155,7 @@ function HistoryPanel({
   mobile,
   onNewChat,
   onOpenKnowledgeBase,
+  onOpenSettings,
   onPrompt,
   onSearchChange,
   onSelectChat,
@@ -1108,6 +1167,7 @@ function HistoryPanel({
   mobile?: boolean
   onNewChat: () => void
   onOpenKnowledgeBase: () => void
+  onOpenSettings: () => void
   onPrompt: (action: PromptAction) => void
   onSearchChange: (value: string) => void
   onSelectChat: (chatId: string) => void
@@ -1125,7 +1185,7 @@ function HistoryPanel({
         "flex min-h-0 flex-col bg-muted/20 transition-[background-color,transform,opacity] duration-300 ease-out motion-reduce:transition-none",
         mobile
           ? "h-full"
-          : "hidden border-r lg:flex lg:animate-in lg:fade-in-0 lg:slide-in-from-left-2 lg:duration-300"
+          : "hidden border-r lg:flex lg:animate-in lg:duration-300 lg:fade-in-0 lg:slide-in-from-left-2"
       )}
     >
       <div className="flex flex-col gap-4 px-5 pt-5 pb-5">
@@ -1135,7 +1195,7 @@ function HistoryPanel({
           </InputGroupAddon>
           <InputGroupInput
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search..."
+            placeholder="Buscar..."
             value={chatQuery}
           />
         </InputGroup>
@@ -1145,14 +1205,14 @@ function HistoryPanel({
           size="lg"
         >
           <PlusIcon data-icon="inline-start" />
-          New chat
+          Nuevo chat
         </Button>
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-7 px-4 pb-5">
           <section className="flex flex-col gap-2">
-            <SidebarSectionTitle>Tools</SidebarSectionTitle>
+            <SidebarSectionTitle>Herramientas</SidebarSectionTitle>
             <div className="flex flex-col gap-1.5">
               {sidebarTools.map((tool) => (
                 <SidebarToolButton
@@ -1165,7 +1225,7 @@ function HistoryPanel({
                 isActive={activeView === "knowledge"}
                 onClick={onOpenKnowledgeBase}
                 tool={{
-                  label: "Knowledge Base",
+                  label: "Base de conocimiento",
                   icon: LibraryIcon,
                   prompt: "",
                 }}
@@ -1194,11 +1254,23 @@ function HistoryPanel({
           )}
           {!visibleCount ? (
             <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-              No mock chats match this search.
+              No hay chats de prueba que coincidan con esta búsqueda.
             </div>
           ) : null}
         </div>
       </ScrollArea>
+      <div className="flex flex-col gap-2 px-4 pt-2 pb-4">
+        <Separator />
+        <SidebarToolButton
+          isActive={activeView === "settings"}
+          onClick={onOpenSettings}
+          tool={{
+            label: "Configuración",
+            icon: SlidersHorizontalIcon,
+            prompt: "",
+          }}
+        />
+      </div>
     </aside>
   )
 }
@@ -1323,47 +1395,47 @@ function KnowledgeBaseView() {
   function handleAddSource() {
     const source: KnowledgeSource = {
       id: makeId("source"),
-      name: "New customer feedback import.pdf",
+      name: "Nueva importación de feedback de clientes.pdf",
       folderId: "product",
       type: "PDF",
-      owner: "Research",
+      owner: "Investigación",
       status: "Indexing",
-      updatedAt: "Just now",
+      updatedAt: "Ahora mismo",
       size: "2.1 MB",
       chunks: 0,
       coverage: 24,
-      tags: ["feedback", "import"],
+      tags: ["feedback", "importación"],
       summary:
-        "Newly uploaded customer feedback package. It is still processing before the team can rely on it.",
+        "Paquete de feedback de clientes recién cargado. Aún está procesándose antes de que el equipo pueda usarlo con confianza.",
       preview: [
-        "Initial upload detected customer comments, account notes, and tagged product requests.",
-        "The file is still being prepared, so managers should wait before using it for decisions.",
-        "Recommendation: refresh after processing, then approve once the owner confirms the summary.",
+        "La carga inicial detectó comentarios de clientes, notas de cuentas y solicitudes de producto etiquetadas.",
+        "El archivo aún se está preparando, por lo que los managers deben esperar antes de usarlo para decisiones.",
+        "Recomendación: actualizar después del procesamiento y aprobar cuando el responsable confirme el resumen.",
       ],
       pages: [
         {
-          title: "New Customer Feedback Import",
-          eyebrow: "Upload preview - page 1",
+          title: "Nueva importación de feedback de clientes",
+          eyebrow: "Vista previa de carga - página 1",
           sections: [
             {
-              heading: "Detected content",
-              body: "Initial upload detected customer comments, account notes, and tagged product requests.",
+              heading: "Contenido detectado",
+              body: "La carga inicial detectó comentarios de clientes, notas de cuentas y solicitudes de producto etiquetadas.",
             },
             {
-              heading: "Current state",
-              body: "The file is still being prepared, so managers should wait before using it for decisions.",
+              heading: "Estado actual",
+              body: "El archivo aún se está preparando, por lo que los managers deben esperar antes de usarlo para decisiones.",
             },
             {
-              heading: "Next step",
-              body: "Refresh after processing, then approve once the owner confirms the summary and intended use.",
+              heading: "Siguiente paso",
+              body: "Actualizar después del procesamiento y aprobar cuando el responsable confirme el resumen y su uso previsto.",
             },
           ],
           callout:
-            "This is a mock upload. The render will become available immediately in this local demo.",
+            "Esta es una carga de prueba. La vista renderizada estará disponible de inmediato en esta demo local.",
         },
       ],
       recommendedUse:
-        "Use after review for customer feedback planning and opportunity discovery.",
+        "Úsalo después de la revisión para planificación de feedback de clientes y detección de oportunidades.",
     }
 
     setSources((current) => [source, ...current])
@@ -1379,7 +1451,7 @@ function KnowledgeBaseView() {
           ? {
               ...source,
               status: "Indexing",
-              updatedAt: "Just now",
+              updatedAt: "Ahora mismo",
               coverage: Math.min(source.coverage, 58),
             }
           : source
@@ -1395,7 +1467,7 @@ function KnowledgeBaseView() {
           ? {
               ...source,
               status: "Ready",
-              updatedAt: "Just now",
+              updatedAt: "Ahora mismo",
               coverage: 98,
               chunks: source.chunks || 144,
             }
@@ -1410,15 +1482,15 @@ function KnowledgeBaseView() {
       <div className="flex h-[3.25rem] shrink-0 items-center justify-between gap-3 border-b px-4 sm:h-14 sm:px-5">
         <div className="min-w-0">
           <h1 className="truncate text-sm font-medium sm:text-base">
-            Knowledge Base
+            Base de conocimiento
           </h1>
           <p className="text-xs text-muted-foreground">
-            Team resources uploaded for managers and assistant context
+            Recursos del equipo cargados para managers y contexto del asistente
           </p>
         </div>
         <Button onClick={handleAddSource} size="sm">
           <UploadIcon data-icon="inline-start" />
-          Upload resource
+          Subir recurso
         </Button>
       </div>
 
@@ -1426,28 +1498,28 @@ function KnowledgeBaseView() {
         <div className="flex flex-col gap-5 p-4 sm:p-5">
           <div className="grid gap-3 md:grid-cols-3">
             <KnowledgeMetric
-              label="Available resources"
+              label="Recursos disponibles"
               value={`${readyCount}/${sources.length}`}
-              detail="Ready for your team to use"
+              detail="Listos para que tu equipo los use"
             />
             <KnowledgeMetric
-              label="Needs review"
+              label="Requiere revisión"
               value={`${reviewCount}`}
-              detail="Waiting for manager approval"
+              detail="En espera de aprobación de manager"
             />
             <KnowledgeMetric
-              label="Processing"
+              label="Procesando"
               value={`${processingCount}`}
-              detail={`Latest upload: ${latestSource}`}
+              detail={`Última carga: ${latestSource}`}
             />
           </div>
 
           <div className="grid min-h-[560px] gap-4 xl:grid-cols-[240px_minmax(0,1fr)_390px] 2xl:grid-cols-[260px_minmax(0,1fr)_430px]">
             <div className="flex min-h-0 flex-col gap-3 rounded-xl border bg-muted/20 p-3">
               <div className="flex items-center justify-between px-1">
-                <h2 className="text-sm font-medium">Areas</h2>
+                <h2 className="text-sm font-medium">Áreas</h2>
                 <Badge className="h-5 text-[10px]" variant="outline">
-                  Shared
+                  Compartido
                 </Badge>
               </div>
               <div className="flex flex-col gap-1.5">
@@ -1501,7 +1573,7 @@ function KnowledgeBaseView() {
                   </InputGroupAddon>
                   <InputGroupInput
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search resources, areas, owners..."
+                    placeholder="Buscar recursos, áreas, responsables..."
                     value={query}
                   />
                 </InputGroup>
@@ -1511,10 +1583,10 @@ function KnowledgeBaseView() {
                   value={statusFilter}
                 >
                   <TabsList>
-                    <TabsTrigger value="all">All</TabsTrigger>
-                    <TabsTrigger value="Ready">Available</TabsTrigger>
-                    <TabsTrigger value="Indexing">Processing</TabsTrigger>
-                    <TabsTrigger value="Review">Review</TabsTrigger>
+                    <TabsTrigger value="all">Todos</TabsTrigger>
+                    <TabsTrigger value="Ready">Disponible</TabsTrigger>
+                    <TabsTrigger value="Indexing">Procesando</TabsTrigger>
+                    <TabsTrigger value="Review">Revisión</TabsTrigger>
                   </TabsList>
                   <TabsContent className="sr-only" value={statusFilter} />
                 </Tabs>
@@ -1524,16 +1596,16 @@ function KnowledgeBaseView() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Source</TableHead>
+                      <TableHead>Fuente</TableHead>
                       <TableHead className="hidden md:table-cell">
-                        Area
+                        Área
                       </TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Estado</TableHead>
                       <TableHead className="hidden lg:table-cell">
-                        Updated
+                        Actualizado
                       </TableHead>
                       <TableHead className="hidden lg:table-cell">
-                        Owner
+                        Responsable
                       </TableHead>
                       <TableHead className="w-10" />
                     </TableRow>
@@ -1586,7 +1658,7 @@ function KnowledgeBaseView() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
-                                aria-label={`Actions for ${source.name}`}
+                                aria-label={`Acciones para ${source.name}`}
                                 size="icon-sm"
                                 variant="ghost"
                               >
@@ -1598,12 +1670,12 @@ function KnowledgeBaseView() {
                                 <DropdownMenuItem
                                   onClick={() => handleReindex(source.id)}
                                 >
-                                  Refresh resource
+                                  Actualizar recurso
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleMarkReady(source.id)}
                                 >
-                                  Approve for use
+                                  Aprobar para uso
                                 </DropdownMenuItem>
                               </DropdownMenuGroup>
                             </DropdownMenuContent>
@@ -1617,7 +1689,7 @@ function KnowledgeBaseView() {
                           className="h-24 text-center text-muted-foreground"
                           colSpan={6}
                         >
-                          No resources match this filter.
+                          Ningún recurso coincide con este filtro.
                         </TableCell>
                       </TableRow>
                     ) : null}
@@ -1630,7 +1702,7 @@ function KnowledgeBaseView() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <EyeIcon />
-                  <h2 className="text-sm font-medium">Preview</h2>
+                  <h2 className="text-sm font-medium">Vista previa</h2>
                 </div>
                 {selectedSource ? (
                   <KnowledgeStatusBadge status={selectedSource.status} />
@@ -1681,21 +1753,21 @@ function KnowledgeBaseView() {
                     />
                   ) : null}
                   <div className="grid gap-3 text-sm">
-                    <KnowledgeDetail label="Area">
+                    <KnowledgeDetail label="Área">
                       {getFolderName(selectedSource.folderId)}
                     </KnowledgeDetail>
-                    <KnowledgeDetail label="File">
+                    <KnowledgeDetail label="Archivo">
                       {selectedSource.type} - {selectedSource.size}
                     </KnowledgeDetail>
-                    <KnowledgeDetail label="Last updated">
+                    <KnowledgeDetail label="Última actualización">
                       {selectedSource.updatedAt}
                     </KnowledgeDetail>
-                    <KnowledgeDetail label="Recommended use">
+                    <KnowledgeDetail label="Uso recomendado">
                       <span className="text-muted-foreground">
                         {selectedSource.recommendedUse}
                       </span>
                     </KnowledgeDetail>
-                    <KnowledgeDetail label="Tags">
+                    <KnowledgeDetail label="Etiquetas">
                       <div className="flex flex-wrap gap-1.5">
                         {selectedSource.tags.map((tag) => (
                           <Badge key={tag} variant="outline">
@@ -1712,17 +1784,17 @@ function KnowledgeBaseView() {
                       variant="outline"
                     >
                       <ClockIcon data-icon="inline-start" />
-                      Refresh
+                      Actualizar
                     </Button>
                     <Button onClick={() => handleMarkReady(selectedSource.id)}>
                       <CircleCheckIcon data-icon="inline-start" />
-                      Approve
+                      Aprobar
                     </Button>
                   </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Select a resource to inspect details.
+                  Selecciona un recurso para inspeccionar sus detalles.
                 </p>
               )}
             </div>
@@ -1763,7 +1835,7 @@ function RenderedDocumentPreview({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">
-              Rendered preview
+              Vista renderizada
             </p>
             <p className="line-clamp-2 text-sm font-medium">{source.summary}</p>
           </div>
@@ -1774,7 +1846,7 @@ function RenderedDocumentPreview({
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
             <Button
-              aria-label="Previous page"
+              aria-label="Página anterior"
               disabled={isFirstPage}
               onClick={onPreviousPage}
               size="icon-sm"
@@ -1783,10 +1855,10 @@ function RenderedDocumentPreview({
               <ChevronLeftIcon />
             </Button>
             <Badge className="h-8 rounded-md px-2.5" variant="secondary">
-              Page {pageIndex + 1}/{pageCount}
+              Página {pageIndex + 1}/{pageCount}
             </Badge>
             <Button
-              aria-label="Next page"
+              aria-label="Página siguiente"
               disabled={isLastPage}
               onClick={onNextPage}
               size="icon-sm"
@@ -1798,7 +1870,7 @@ function RenderedDocumentPreview({
           <Separator className="hidden h-6 sm:block" orientation="vertical" />
           <div className="ml-auto flex items-center gap-1">
             <Button
-              aria-label="Zoom out"
+              aria-label="Alejar"
               disabled={zoom <= 80}
               onClick={onZoomOut}
               size="icon-sm"
@@ -1810,7 +1882,7 @@ function RenderedDocumentPreview({
               {zoom}%
             </Badge>
             <Button
-              aria-label="Zoom in"
+              aria-label="Acercar"
               disabled={zoom >= 140}
               onClick={onZoomIn}
               size="icon-sm"
@@ -1890,7 +1962,7 @@ function RenderedPreviewSurface({
       ) : null}
       <div className="mt-5 flex items-center justify-between border-t pt-3 text-[10px] text-muted-foreground">
         <span>{source.owner}</span>
-        <span>Page {pageIndex + 1}</span>
+        <span>Página {pageIndex + 1}</span>
       </div>
     </article>
   )
@@ -2041,20 +2113,20 @@ function KnowledgeMetric({
 
 function KnowledgeStatusBadge({ status }: { status: KnowledgeStatus }) {
   if (status === "Ready") {
-    return <Badge variant="secondary">Available</Badge>
+    return <Badge variant="secondary">Disponible</Badge>
   }
 
   if (status === "Indexing") {
-    return <Badge variant="outline">Processing</Badge>
+    return <Badge variant="outline">Procesando</Badge>
   }
 
-  return <Badge variant="destructive">Needs review</Badge>
+  return <Badge variant="destructive">Requiere revisión</Badge>
 }
 
 function getFolderName(folderId: string) {
   return (
     knowledgeFolders.find((folder) => folder.id === folderId)?.name ??
-    "Unassigned"
+    "Sin asignar"
   )
 }
 
@@ -2073,6 +2145,289 @@ function KnowledgeDetail({
   )
 }
 
+function ChatSettingsView({
+  isPro,
+  model,
+  onModelChange,
+  onThemeChange,
+  onTogglePro,
+  themePreference,
+}: {
+  isPro: boolean
+  model: string
+  onModelChange: (value: string) => void
+  onThemeChange: (value: ThemePreference) => void
+  onTogglePro: () => void
+  themePreference: ThemePreference
+}) {
+  const [assistantTone, setAssistantTone] = React.useState("Equilibrado")
+  const [responseDepth, setResponseDepth] = React.useState("Conciso")
+  const [memoryMode, setMemoryMode] = React.useState("Solo sesión")
+  const [customInstruction, setCustomInstruction] = React.useState(
+    "Prioriza respuestas concisas con acciones claras."
+  )
+
+  return (
+    <section className="flex min-h-0 animate-in flex-col overflow-hidden bg-background duration-300 ease-out fade-in-0">
+      <div className="flex h-[3.25rem] shrink-0 items-center justify-between gap-3 border-b px-4 sm:h-14 sm:px-5">
+        <div className="min-w-0">
+          <h1 className="truncate text-sm font-medium sm:text-base">
+            Configuración del chat AI
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Configura apariencia y personalización del asistente.
+          </p>
+        </div>
+        <Badge variant="outline">Preferencias</Badge>
+      </div>
+
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4 sm:p-5">
+          <Tabs defaultValue="appearance" className="flex flex-col gap-4">
+            <TabsList className="w-full justify-start rounded-xl bg-muted/50">
+              <TabsTrigger value="appearance">Apariencia</TabsTrigger>
+              <TabsTrigger value="personalization">Personalización</TabsTrigger>
+              <TabsTrigger value="assistant">Asistente</TabsTrigger>
+            </TabsList>
+
+            <TabsContent
+              className="mt-0 animate-in duration-300 ease-out fade-in-0 slide-in-from-bottom-1"
+              value="appearance"
+            >
+              <Card
+                className="transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm"
+                size="sm"
+              >
+                <CardHeader>
+                  <CardTitle>Tema</CardTitle>
+                  <CardDescription>
+                    Elige cómo se ve el chat AI en tu espacio de trabajo.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">Modo de color</p>
+                        <p className="text-xs text-muted-foreground">
+                          Preferencia actual: {themePreference}
+                        </p>
+                      </div>
+                      <Select
+                        onValueChange={(value) =>
+                          onThemeChange(normalizeThemePreference(value))
+                        }
+                        value={themePreference}
+                      >
+                        <SelectTrigger className="w-full sm:w-40">
+                          <SelectValue placeholder="Seleccionar tema" />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          <SelectGroup>
+                            <SelectItem value="system">Sistema</SelectItem>
+                            <SelectItem value="light">Claro</SelectItem>
+                            <SelectItem value="dark">Oscuro</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+                      Las transiciones suaves siguen activas para paneles y
+                      mensajes.
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button size="sm" variant="secondary">
+                    <CircleCheckIcon data-icon="inline-start" />
+                    Guardado automático
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              className="mt-0 animate-in duration-300 ease-out fade-in-0 slide-in-from-bottom-1"
+              value="personalization"
+            >
+              <Card
+                className="transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm"
+                size="sm"
+              >
+                <CardHeader>
+                  <CardTitle>Estilo personal</CardTitle>
+                  <CardDescription>
+                    Ajusta el tono y estilo de salida de las respuestas.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          Tono del asistente
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Cercano, directo o estructurado.
+                        </p>
+                      </div>
+                      <Select
+                        onValueChange={setAssistantTone}
+                        value={assistantTone}
+                      >
+                        <SelectTrigger className="w-full sm:w-48">
+                          <SelectValue placeholder="Seleccionar tono" />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          <SelectGroup>
+                            <SelectItem value="Equilibrado">
+                              Equilibrado
+                            </SelectItem>
+                            <SelectItem value="Amigable">Amigable</SelectItem>
+                            <SelectItem value="Ejecutivo">Ejecutivo</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          Nivel de profundidad
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Controla qué tan detallada debe ser cada respuesta.
+                        </p>
+                      </div>
+                      <Select
+                        onValueChange={setResponseDepth}
+                        value={responseDepth}
+                      >
+                        <SelectTrigger className="w-full sm:w-48">
+                          <SelectValue placeholder="Seleccionar nivel" />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          <SelectGroup>
+                            <SelectItem value="Conciso">Conciso</SelectItem>
+                            <SelectItem value="Equilibrado">
+                              Equilibrado
+                            </SelectItem>
+                            <SelectItem value="A fondo">A fondo</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <InputGroup className="h-auto rounded-lg bg-background">
+                      <InputGroupTextarea
+                        className="min-h-[96px]"
+                        onChange={(event) =>
+                          setCustomInstruction(event.target.value.slice(0, 240))
+                        }
+                        placeholder="Agrega una instrucción para guiar futuras respuestas..."
+                        value={customInstruction}
+                      />
+                      <InputGroupAddon
+                        align="block-end"
+                        className="justify-end px-3 pb-3"
+                      >
+                        <InputGroupText className="text-xs text-muted-foreground">
+                          {customInstruction.length}/240
+                        </InputGroupText>
+                      </InputGroupAddon>
+                    </InputGroup>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button size="sm" variant="secondary">
+                    <CircleCheckIcon data-icon="inline-start" />
+                    Preferencias actualizadas
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              className="mt-0 animate-in duration-300 ease-out fade-in-0 slide-in-from-bottom-1"
+              value="assistant"
+            >
+              <Card
+                className="transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm"
+                size="sm"
+              >
+                <CardHeader>
+                  <CardTitle>Comportamiento de IA</CardTitle>
+                  <CardDescription>
+                    Controla el modelo y el comportamiento de memoria.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          Modelo por defecto
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Este modelo se usa en chats nuevos.
+                        </p>
+                      </div>
+                      <Select onValueChange={onModelChange} value={model}>
+                        <SelectTrigger className="w-full sm:w-52">
+                          <SelectValue placeholder="Seleccionar modelo" />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          <SelectGroup>
+                            {models.map((item) => (
+                              <SelectItem key={item} value={item}>
+                                {item}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">Modo de memoria</p>
+                        <p className="text-xs text-muted-foreground">
+                          Decide cuánto contexto conserva el asistente.
+                        </p>
+                      </div>
+                      <Select onValueChange={setMemoryMode} value={memoryMode}>
+                        <SelectTrigger className="w-full sm:w-52">
+                          <SelectValue placeholder="Seleccionar modo" />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          <SelectGroup>
+                            <SelectItem value="Solo sesión">
+                              Solo sesión
+                            </SelectItem>
+                            <SelectItem value="Últimos 7 días">
+                              Últimos 7 días
+                            </SelectItem>
+                            <SelectItem value="Solo chats fijados">
+                              Solo chats fijados
+                            </SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={onTogglePro} size="sm" variant="outline">
+                    <CircleCheckIcon data-icon="inline-start" />
+                    {isPro ? "Pro habilitado" : "Habilitar personalización Pro"}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </ScrollArea>
+    </section>
+  )
+}
+
 function ChatWorkspace({
   attachments,
   activeView,
@@ -2087,10 +2442,12 @@ function ChatWorkspace({
   onNewChat,
   onPrompt,
   onSend,
+  onThemeChange,
   onTogglePro,
   onToggleVoice,
   promptActions,
   textareaRef,
+  themePreference,
   voiceEnabled,
 }: {
   attachments: number
@@ -2106,19 +2463,34 @@ function ChatWorkspace({
   onNewChat: () => void
   onPrompt: (action: PromptAction) => void
   onSend: () => void
+  onThemeChange: (value: ThemePreference) => void
   onTogglePro: () => void
   onToggleVoice: () => void
   promptActions: PromptAction[]
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
+  themePreference: ThemePreference
   voiceEnabled: boolean
 }) {
+  if (activeView === "settings") {
+    return (
+      <ChatSettingsView
+        isPro={isPro}
+        model={model}
+        onModelChange={onModelChange}
+        onThemeChange={onThemeChange}
+        onTogglePro={onTogglePro}
+        themePreference={themePreference}
+      />
+    )
+  }
+
   if (activeView === "knowledge") {
     return <KnowledgeBaseView />
   }
 
   if (chat) {
     return (
-      <section className="flex min-h-0 animate-in flex-col overflow-hidden bg-background duration-300 fade-in-0 ease-out">
+      <section className="flex min-h-0 animate-in flex-col overflow-hidden bg-background duration-300 ease-out fade-in-0">
         <div className="flex h-[3.25rem] shrink-0 items-center justify-between gap-3 border-b px-4 sm:h-14 sm:px-5">
           <div className="min-w-0">
             <h1 className="truncate text-sm font-medium sm:text-base">
@@ -2162,7 +2534,7 @@ function ChatWorkspace({
   }
 
   return (
-    <section className="relative min-h-0 animate-in overflow-hidden bg-background duration-300 fade-in-0 ease-out">
+    <section className="relative min-h-0 animate-in overflow-hidden bg-background duration-300 ease-out fade-in-0">
       <div className="mx-auto flex h-full w-full max-w-[880px] flex-col items-center px-4 pt-14 sm:px-5 sm:pt-20 lg:pt-28">
         <div className="ai-orb" aria-hidden />
         <h1 className="mt-10 text-center text-[28px] leading-[1.2] font-medium tracking-[0] text-foreground sm:mt-12 sm:text-[34px] xl:text-[38px]">
@@ -2214,7 +2586,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   return (
     <div
       className={cn(
-        "flex animate-in gap-3 duration-300 fade-in-0 slide-in-from-bottom-1 ease-out",
+        "flex animate-in gap-3 duration-300 ease-out fade-in-0 slide-in-from-bottom-1",
         isUser && "justify-end"
       )}
     >
