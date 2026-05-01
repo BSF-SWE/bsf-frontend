@@ -129,9 +129,9 @@
 }
 
 :root {
-  --ai-chat-pro: #c287ff;
-  --ai-chat-accent-start: #ad76ff;
-  --ai-chat-accent-end: #9eb3ff;
+  --ai-chat-pro: #e3000f;
+  --ai-chat-accent-start: #e3000f;
+  --ai-chat-accent-end: #ff5252;
   --ai-chat-composer-shell: oklch(0.88 0 0);
   --ai-chat-alert: #ff3b30;
 }
@@ -208,12 +208,12 @@
   background:
     radial-gradient(
       circle at 26% 36%,
-      rgb(255 182 154 / 85%) 0 17%,
+      rgb(255 154 154 / 85%) 0 17%,
       transparent 35%
     ),
     radial-gradient(
       circle at 74% 68%,
-      rgb(181 117 255 / 62%) 0 22%,
+      rgb(227 0 15 / 62%) 0 22%,
       transparent 48%
     ),
     radial-gradient(
@@ -223,14 +223,14 @@
     ),
     radial-gradient(
       circle at 50% 50%,
-      rgb(250 211 223 / 75%) 0 48%,
-      rgb(204 165 255 / 52%) 76%,
+      rgb(255 180 180 / 75%) 0 48%,
+      rgb(227 0 15 / 52%) 76%,
       rgb(255 255 255 / 20%) 100%
     );
   box-shadow:
     inset 18px 18px 38px rgb(255 255 255 / 70%),
-    inset -22px -18px 32px rgb(139 83 213 / 22%),
-    0 18px 52px rgb(206 165 210 / 28%);
+    inset -22px -18px 32px rgb(180 30 30 / 22%),
+    0 18px 52px rgb(227 0 15 / 28%);
   animation:
     ai-orb-spin 14s linear infinite,
     ai-orb-float 6s ease-in-out infinite;
@@ -250,12 +250,12 @@
     ),
     radial-gradient(
       ellipse at 34% 26%,
-      rgb(255 228 218 / 70%) 0 16%,
+      rgb(255 200 200 / 70%) 0 16%,
       transparent 42%
     ),
     radial-gradient(
       ellipse at 68% 72%,
-      rgb(174 108 255 / 42%) 0 18%,
+      rgb(227 0 15 / 42%) 0 18%,
       transparent 52%
     );
   filter: blur(0.2px);
@@ -281,22 +281,22 @@
     ),
     radial-gradient(
       circle at 52% 27%,
-      rgb(160 131 210 / 46%) 0 1.2px,
+      rgb(255 100 100 / 46%) 0 1.2px,
       transparent 2px
     ),
     radial-gradient(
       circle at 62% 60%,
-      rgb(158 91 224 / 38%) 0 1.4px,
+      rgb(227 0 15 / 38%) 0 1.4px,
       transparent 2.1px
     ),
     radial-gradient(
       circle at 43% 76%,
-      rgb(199 122 201 / 34%) 0 1.5px,
+      rgb(255 150 150 / 34%) 0 1.5px,
       transparent 2px
     ),
     radial-gradient(
       circle at 72% 22%,
-      rgb(223 109 154 / 38%) 0 1.2px,
+      rgb(255 80 80 / 38%) 0 1.2px,
       transparent 2px
     );
 }
