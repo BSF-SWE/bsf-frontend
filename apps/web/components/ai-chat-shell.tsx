@@ -2430,6 +2430,68 @@ function ChatWorkspace({
   themePreference: ThemePreference
   voiceEnabled: boolean
 }) {
+  const [transcript, setTranscript] = React.useState("")
+
+  React.useEffect(() => {
+    if (!voiceEnabled) {
+      setTranscript("")
+      return
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition
+
+    if (!SpeechRecognition) {
+      setTranscript("Tu navegador no soporta reconocimiento de voz.")
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = "es-PE"
+
+    recognition.onresult = (event: any) => {
+      let currentTranscript = ""
+      for (let i = 0; i < event.results.length; i++) {
+        currentTranscript += event.results[i][0].transcript
+      }
+      setTranscript(currentTranscript)
+    }
+
+    recognition.onerror = (event: any) => {
+      console.error("Error en reconocimiento de voz:", event.error)
+      if (
+        event.error === "not-allowed" ||
+        event.error === "service-not-allowed"
+      ) {
+        setTranscript(
+          "Por favor, permite el acceso al micrófono o revisa los permisos del navegador."
+        )
+      } else {
+        setTranscript(`Error en el dictado: ${event.error}`)
+      }
+    }
+
+    try {
+      recognition.start()
+    } catch (error) {
+      console.error(error)
+    }
+
+    return () => {
+      recognition.stop()
+    }
+  }, [voiceEnabled])
+
+  function handleStopVoice() {
+    if (transcript) {
+      onDraftChange(draft ? `${draft} ${transcript}` : transcript)
+    }
+    onToggleVoice()
+  }
+
   if (activeView === "settings") {
     return (
       <ChatSettingsView
@@ -2451,7 +2513,7 @@ function ChatWorkspace({
 
   if (chat) {
     return (
-      <section className="flex min-h-0 animate-in flex-col overflow-hidden bg-background duration-300 ease-out fade-in-0">
+      <section className="relative flex min-h-0 animate-in flex-col overflow-hidden bg-background duration-300 ease-out fade-in-0">
         <div className="flex h-[3.25rem] shrink-0 items-center justify-between gap-3 border-b px-4 sm:h-14 sm:px-5">
           <div className="min-w-0">
             <h1 className="truncate text-sm font-medium sm:text-base">
@@ -2466,14 +2528,64 @@ function ChatWorkspace({
             New
           </Button>
         </div>
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea
+          className={cn(
+            "min-h-0 flex-1 transition-all duration-700 ease-in-out",
+            voiceEnabled && "pointer-events-none opacity-10 blur-sm"
+          )}
+        >
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5 sm:px-6">
             {chat.messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
           </div>
         </ScrollArea>
-        <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-4 sm:px-6">
+
+        {/* Voice Overlay for Active Chat */}
+        <div
+          className={cn(
+            "absolute inset-0 top-[3.25rem] z-50 flex flex-col items-center justify-center transition-all duration-700 ease-in-out sm:top-14",
+            voiceEnabled
+              ? "visible opacity-100"
+              : "pointer-events-none invisible opacity-0"
+          )}
+        >
+          <div
+            className={cn(
+              "ai-orb transition-all duration-700 ease-in-out",
+              voiceEnabled
+                ? "scale-[1.5] cursor-pointer shadow-[0_0_80px_rgba(227,0,15,0.3)]"
+                : "scale-50"
+            )}
+            aria-hidden
+            onClick={voiceEnabled ? handleStopVoice : undefined}
+          />
+          <div className="mt-24 flex flex-col items-center px-6 text-center">
+            <p className="max-w-2xl text-xl leading-relaxed font-medium text-foreground sm:text-2xl">
+              {transcript.split(" ").map((word, index) => (
+                <span
+                  key={index}
+                  className="mr-1 inline-block animate-in duration-500 ease-out fade-in"
+                >
+                  {word}
+                </span>
+              ))}
+              <span className="ml-1 animate-pulse text-primary">|</span>
+            </p>
+            <p className="mt-6 text-xs font-medium tracking-wide text-muted-foreground uppercase sm:text-sm">
+              Escuchando... Haz clic en la esfera para terminar
+            </p>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "mx-auto w-full max-w-3xl px-4 pt-2 pb-4 transition-all duration-700 ease-in-out sm:px-6",
+            voiceEnabled
+              ? "pointer-events-none translate-y-12 opacity-0"
+              : "translate-y-0 opacity-100"
+          )}
+        >
           <ChatComposer
             attachments={attachments}
             draft={draft}
@@ -2494,43 +2606,93 @@ function ChatWorkspace({
 
   return (
     <section className="relative min-h-0 animate-in overflow-hidden bg-background duration-300 ease-out fade-in-0">
-      <div className="mx-auto flex h-full w-full max-w-[880px] flex-col items-center px-4 pt-14 sm:px-5 sm:pt-20 lg:pt-28">
-        <div className="ai-orb" aria-hidden />
-        <h1 className="mt-10 text-center text-[28px] leading-[1.2] font-medium tracking-[0] text-foreground sm:mt-12 sm:text-[34px] xl:text-[38px]">
-          <span>Good Morning, Toby</span>
-          <br />
-          <span>
-            How Can I{" "}
-            <span className="ai-gradient-text">Assist You Today?</span>
-          </span>
-        </h1>
-        <ChatComposer
-          attachments={attachments}
-          className="mt-8 sm:mt-10"
-          draft={draft}
-          mode={mode}
-          model={model}
-          onAttach={onAttach}
-          onDraftChange={onDraftChange}
-          onModelChange={onModelChange}
-          onSend={onSend}
-          onToggleVoice={onToggleVoice}
-          textareaRef={textareaRef}
-          voiceEnabled={voiceEnabled}
+      <div
+        className={cn(
+          "mx-auto flex h-full w-full max-w-[880px] flex-col items-center px-4 transition-all duration-700 ease-in-out",
+          voiceEnabled ? "pt-[25vh]" : "pt-14 sm:pt-20 lg:pt-28"
+        )}
+      >
+        <div
+          className={cn(
+            "ai-orb transition-all duration-700 ease-in-out",
+            voiceEnabled
+              ? "scale-[1.8] cursor-pointer shadow-[0_0_80px_rgba(227,0,15,0.4)]"
+              : "scale-100"
+          )}
+          aria-hidden
+          onClick={voiceEnabled ? handleStopVoice : undefined}
         />
-        <div className="mt-5 flex flex-wrap justify-center gap-2 sm:gap-3">
-          {promptActions.map((action) => (
-            <Button
-              className="h-8 rounded-full bg-background px-3 shadow-sm transition-[background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow"
-              key={action.label}
-              onClick={() => onPrompt(action)}
-              size="sm"
-              variant="outline"
-            >
-              <action.icon data-icon="inline-start" />
-              {action.label}
-            </Button>
-          ))}
+
+        {/* Voice Captions Overlay */}
+        <div
+          className={cn(
+            "absolute top-[60%] flex flex-col items-center px-6 text-center transition-all duration-700 ease-in-out",
+            voiceEnabled
+              ? "translate-y-0 opacity-100"
+              : "pointer-events-none translate-y-8 opacity-0"
+          )}
+        >
+          <p className="max-w-2xl text-xl leading-relaxed font-medium text-foreground sm:text-2xl">
+            {transcript.split(" ").map((word, index) => (
+              <span
+                key={index}
+                className="mr-1 inline-block animate-in duration-500 ease-out fade-in"
+              >
+                {word}
+              </span>
+            ))}
+            <span className="ml-1 animate-pulse text-primary">|</span>
+          </p>
+          <p className="mt-6 text-xs font-medium tracking-wide text-muted-foreground uppercase sm:text-sm">
+            Escuchando... Haz clic en la esfera para terminar
+          </p>
+        </div>
+
+        {/* Standard UI */}
+        <div
+          className={cn(
+            "flex w-full flex-col items-center transition-all duration-700 ease-in-out",
+            voiceEnabled
+              ? "pointer-events-none translate-y-12 opacity-0"
+              : "translate-y-0 opacity-100"
+          )}
+        >
+          <h1 className="mt-10 text-center text-[28px] leading-[1.2] font-medium tracking-[0] text-foreground sm:mt-12 sm:text-[34px] xl:text-[38px]">
+            <span>Good Morning, Toby</span>
+            <br />
+            <span>
+              How Can I{" "}
+              <span className="ai-gradient-text">Assist You Today?</span>
+            </span>
+          </h1>
+          <ChatComposer
+            attachments={attachments}
+            className="mt-8 sm:mt-10"
+            draft={draft}
+            mode={mode}
+            model={model}
+            onAttach={onAttach}
+            onDraftChange={onDraftChange}
+            onModelChange={onModelChange}
+            onSend={onSend}
+            onToggleVoice={onToggleVoice}
+            textareaRef={textareaRef}
+            voiceEnabled={voiceEnabled}
+          />
+          <div className="mt-5 flex flex-wrap justify-center gap-2 sm:gap-3">
+            {promptActions.map((action) => (
+              <Button
+                className="h-8 rounded-full bg-background px-3 shadow-sm transition-[background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow"
+                key={action.label}
+                onClick={() => onPrompt(action)}
+                size="sm"
+                variant="outline"
+              >
+                <action.icon data-icon="inline-start" />
+                {action.label}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     </section>

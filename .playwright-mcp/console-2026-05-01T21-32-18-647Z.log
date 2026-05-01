@@ -1,0 +1,16 @@
+[    1943ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[    2019ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[    2091ms] [WARNING] Image with src "/logo-sin-fondo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  121474ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  123209ms] [LOG] [Fast Refresh] done in 1656ms @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  125933ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  126287ms] [LOG] [Fast Refresh] done in 461ms @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  126855ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  127012ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  127226ms] [WARNING] Image with src "/logo-sin-fondo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  127227ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  127268ms] [LOG] [Fast Refresh] done in 164ms @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  143261ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  143840ms] [LOG] [Fast Refresh] done in 610ms @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  144265ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297
+[  144683ms] [LOG] [Fast Refresh] done in 362ms @ http://localhost:3000/_next/static/chunks/9b0e8_next_dist_0e1c8e75._.js:2297

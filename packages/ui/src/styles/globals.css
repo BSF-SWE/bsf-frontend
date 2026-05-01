@@ -132,7 +132,15 @@
   --ai-chat-pro: #e3000f;
   --ai-chat-accent-start: #e3000f;
   --ai-chat-accent-end: #ff5252;
-  --ai-chat-composer-shell: oklch(0.88 0 0);
+  --ai-chat-composer-shell: oklch(0.96 0 0);
+  --ai-chat-alert: #ff3b30;
+}
+
+.dark {
+  --ai-chat-pro: #e3000f;
+  --ai-chat-accent-start: #ff5252;
+  --ai-chat-accent-end: #ff8a8a;
+  --ai-chat-composer-shell: oklch(0.269 0 0);
   --ai-chat-alert: #ff3b30;
 }
 
