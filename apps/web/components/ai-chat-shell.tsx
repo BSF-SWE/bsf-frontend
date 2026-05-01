@@ -101,10 +101,12 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
+import { ManagerNotifications } from "./manager-notifications"
+import { NotificationsView } from "./notifications-view"
 
 type ChatGroup = "Recientes" | "Ayer"
 type MessageRole = "user" | "assistant"
-type WorkspaceView = "chat" | "knowledge" | "settings"
+type WorkspaceView = "chat" | "knowledge" | "settings" | "notifications"
 type KnowledgeStatus = "Ready" | "Indexing" | "Review"
 type ThemePreference = "light" | "dark" | "system"
 
@@ -766,7 +768,6 @@ export function AiChatShell() {
   const [desktopSidebarOpen, setDesktopSidebarOpen] = React.useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
   const [voiceEnabled, setVoiceEnabled] = React.useState(false)
-  const [isPro, setIsPro] = React.useState(false)
   const [attachments, setAttachments] = React.useState(0)
   const [notificationCount, setNotificationCount] = React.useState(1)
   const searchRef = React.useRef<HTMLInputElement>(null)
@@ -928,17 +929,13 @@ export function AiChatShell() {
   return (
     <main className="min-h-svh overflow-hidden bg-background text-foreground">
       <TopBar
-        chatQuery={chatQuery}
-        isPro={isPro}
         notificationCount={notificationCount}
         onClearNotifications={() => setNotificationCount(0)}
-        onSearchChange={setChatQuery}
-        onTogglePro={() => setIsPro((value) => !value)}
         onToggleSidebar={handleToggleSidebar}
         onToggleTheme={() =>
           setTheme(resolvedTheme === "dark" ? "light" : "dark")
         }
-        searchRef={searchRef}
+        onOpenNotifications={() => setActiveView("notifications")}
         theme={resolvedTheme}
       />
 
@@ -964,6 +961,7 @@ export function AiChatShell() {
                 onSearchChange={setChatQuery}
                 onSelectChat={handleSelectChat}
                 selectedChatId={selectedChatId}
+                searchRef={searchRef}
               />
             ) : null}
             <ChatWorkspace
@@ -971,7 +969,6 @@ export function AiChatShell() {
               activeView={activeView}
               chat={selectedChat}
               draft={draft}
-              isPro={isPro}
               mode={mode}
               model={model}
               onAttach={handleAttach}
@@ -981,7 +978,6 @@ export function AiChatShell() {
               onPrompt={handlePrompt}
               onSend={handleSend}
               onThemeChange={setTheme}
-              onTogglePro={() => setIsPro((value) => !value)}
               onToggleVoice={() => setVoiceEnabled((value) => !value)}
               promptActions={promptActions}
               textareaRef={draftRef}
@@ -1015,6 +1011,7 @@ export function AiChatShell() {
             onSearchChange={setChatQuery}
             onSelectChat={handleSelectChat}
             selectedChatId={selectedChatId}
+            searchRef={searchRef}
           />
         </SheetContent>
       </Sheet>
@@ -1023,26 +1020,18 @@ export function AiChatShell() {
 }
 
 function TopBar({
-  chatQuery,
-  isPro,
   notificationCount,
   onClearNotifications,
-  onSearchChange,
-  onTogglePro,
   onToggleSidebar,
   onToggleTheme,
-  searchRef,
+  onOpenNotifications,
   theme,
 }: {
-  chatQuery: string
-  isPro: boolean
   notificationCount: number
   onClearNotifications: () => void
-  onSearchChange: (value: string) => void
-  onTogglePro: () => void
   onToggleSidebar: () => void
   onToggleTheme: () => void
-  searchRef: React.RefObject<HTMLInputElement | null>
+  onOpenNotifications: () => void
   theme?: string
 }) {
   const [mounted, setMounted] = React.useState(false)
@@ -1054,8 +1043,8 @@ function TopBar({
   const ThemeIcon = mounted && theme === "dark" ? SunIcon : MoonIcon
 
   return (
-    <header className="flex h-[3.25rem] items-center border-b bg-background px-3 sm:h-14 sm:px-4">
-      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <header className="relative flex h-14 items-center border-b bg-background px-3 sm:h-16 sm:px-4">
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -1063,47 +1052,24 @@ function TopBar({
               onClick={onToggleSidebar}
               size="icon-sm"
               variant="ghost"
+              className="shrink-0"
             >
               <PanelLeftIcon />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Alternar barra lateral</TooltipContent>
         </Tooltip>
-        <Separator className="hidden h-6 sm:block" orientation="vertical" />
-        <InputGroup className="h-9 w-[min(370px,48vw)] rounded-md bg-background shadow-sm max-[520px]:hidden">
-          <InputGroupAddon>
-            <SearchIcon />
-          </InputGroupAddon>
-          <InputGroupInput
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Buscar..."
-            ref={searchRef}
-            value={chatQuery}
-          />
-          <InputGroupAddon align="inline-end">
-            <Kbd>⌘ k</Kbd>
-          </InputGroupAddon>
-        </InputGroup>
+        <img
+          src="/logo-sin-fondo.png"
+          alt="BSF Almacenes del Perú"
+          className="h-7 w-auto object-contain sm:h-9"
+        />
       </div>
 
       <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-        <Button
-          className="ai-pro-link hidden sm:inline-flex"
-          onClick={onTogglePro}
-          size="sm"
-          variant="ghost"
-        >
-          {isPro ? "Pro activo" : "Obtener Pro"}
-        </Button>
-        <TopIcon
-          badgeCount={notificationCount}
-          icon={BellIcon}
-          label="Notificaciones"
-          onClick={onClearNotifications}
-        />
+        <ManagerNotifications onViewAll={onOpenNotifications} />
         <TopIcon icon={ThemeIcon} label="Tema" onClick={onToggleTheme} />
-        <TopIcon icon={PaintbrushIcon} label="Estilo" />
-        <TopIcon icon={SmileIcon} label="Reacciones" />
+
         <Separator
           className="mx-1 hidden h-6 sm:block"
           orientation="vertical"
@@ -1160,6 +1126,7 @@ function HistoryPanel({
   onSearchChange,
   onSelectChat,
   selectedChatId,
+  searchRef,
 }: {
   activeView: WorkspaceView
   chatQuery: string
@@ -1172,6 +1139,7 @@ function HistoryPanel({
   onSearchChange: (value: string) => void
   onSelectChat: (chatId: string) => void
   selectedChatId: string | null
+  searchRef?: React.RefObject<HTMLInputElement | null>
 }) {
   const grouped = groupOrder.map((group) => ({
     group,
@@ -1197,7 +1165,11 @@ function HistoryPanel({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Buscar..."
             value={chatQuery}
+            ref={searchRef}
           />
+          <InputGroupAddon align="inline-end" className="hidden lg:flex">
+            <Kbd>⌘ k</Kbd>
+          </InputGroupAddon>
         </InputGroup>
         <Button
           className="h-12 justify-start rounded-xl px-4 text-base font-medium shadow-sm"
@@ -2146,18 +2118,14 @@ function KnowledgeDetail({
 }
 
 function ChatSettingsView({
-  isPro,
   model,
   onModelChange,
   onThemeChange,
-  onTogglePro,
   themePreference,
 }: {
-  isPro: boolean
   model: string
   onModelChange: (value: string) => void
   onThemeChange: (value: ThemePreference) => void
-  onTogglePro: () => void
   themePreference: ThemePreference
 }) {
   const [assistantTone, setAssistantTone] = React.useState("Equilibrado")
@@ -2413,12 +2381,6 @@ function ChatSettingsView({
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Button onClick={onTogglePro} size="sm" variant="outline">
-                    <CircleCheckIcon data-icon="inline-start" />
-                    {isPro ? "Pro habilitado" : "Habilitar personalización Pro"}
-                  </Button>
-                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>
@@ -2433,7 +2395,6 @@ function ChatWorkspace({
   activeView,
   chat,
   draft,
-  isPro,
   mode,
   model,
   onAttach,
@@ -2443,7 +2404,6 @@ function ChatWorkspace({
   onPrompt,
   onSend,
   onThemeChange,
-  onTogglePro,
   onToggleVoice,
   promptActions,
   textareaRef,
@@ -2454,7 +2414,6 @@ function ChatWorkspace({
   activeView: WorkspaceView
   chat: Chat | null
   draft: string
-  isPro: boolean
   mode: string
   model: string
   onAttach: () => void
@@ -2464,7 +2423,6 @@ function ChatWorkspace({
   onPrompt: (action: PromptAction) => void
   onSend: () => void
   onThemeChange: (value: ThemePreference) => void
-  onTogglePro: () => void
   onToggleVoice: () => void
   promptActions: PromptAction[]
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
@@ -2474,11 +2432,9 @@ function ChatWorkspace({
   if (activeView === "settings") {
     return (
       <ChatSettingsView
-        isPro={isPro}
         model={model}
         onModelChange={onModelChange}
         onThemeChange={onThemeChange}
-        onTogglePro={onTogglePro}
         themePreference={themePreference}
       />
     )
@@ -2486,6 +2442,10 @@ function ChatWorkspace({
 
   if (activeView === "knowledge") {
     return <KnowledgeBaseView />
+  }
+
+  if (activeView === "notifications") {
+    return <NotificationsView themePreference={themePreference} />
   }
 
   if (chat) {
@@ -2516,14 +2476,12 @@ function ChatWorkspace({
           <ChatComposer
             attachments={attachments}
             draft={draft}
-            isPro={isPro}
             mode={mode}
             model={model}
             onAttach={onAttach}
             onDraftChange={onDraftChange}
             onModelChange={onModelChange}
             onSend={onSend}
-            onTogglePro={onTogglePro}
             onToggleVoice={onToggleVoice}
             textareaRef={textareaRef}
             voiceEnabled={voiceEnabled}
@@ -2549,14 +2507,12 @@ function ChatWorkspace({
           attachments={attachments}
           className="mt-8 sm:mt-10"
           draft={draft}
-          isPro={isPro}
           mode={mode}
           model={model}
           onAttach={onAttach}
           onDraftChange={onDraftChange}
           onModelChange={onModelChange}
           onSend={onSend}
-          onTogglePro={onTogglePro}
           onToggleVoice={onToggleVoice}
           textareaRef={textareaRef}
           voiceEnabled={voiceEnabled}
@@ -2621,14 +2577,12 @@ function ChatComposer({
   attachments,
   className,
   draft,
-  isPro,
   mode,
   model,
   onAttach,
   onDraftChange,
   onModelChange,
   onSend,
-  onTogglePro,
   onToggleVoice,
   textareaRef,
   voiceEnabled,
@@ -2636,14 +2590,12 @@ function ChatComposer({
   attachments: number
   className?: string
   draft: string
-  isPro: boolean
   mode: string
   model: string
   onAttach: () => void
   onDraftChange: (value: string) => void
   onModelChange: (value: string) => void
   onSend: () => void
-  onTogglePro: () => void
   onToggleVoice: () => void
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
   voiceEnabled: boolean
@@ -2657,18 +2609,8 @@ function ChatComposer({
     >
       <InputGroupAddon align="block-start" className="h-8 px-4 py-0 sm:px-5">
         <InputGroupText className="min-w-0 gap-2 text-xs text-foreground">
-          <span className="truncate">
-            {isPro ? "Pro mock plan enabled" : "Use our faster AI on Pro Plan"}
-          </span>
-          <span aria-hidden>-</span>
-          <Button
-            className="h-auto shrink-0 p-0 text-xs"
-            onClick={onTogglePro}
-            size="xs"
-            variant="link"
-          >
-            {isPro ? "Manage" : "Upgrade"}
-          </Button>
+          <span className="truncate">Smart Reasoning for Business</span>
+
           {mode !== "General" ? (
             <Badge
               className="ml-auto hidden h-5 text-[10px] sm:inline-flex"
