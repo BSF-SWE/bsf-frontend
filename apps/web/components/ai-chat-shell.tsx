@@ -24,8 +24,10 @@ import {
   FolderIcon,
   GaugeIcon,
   Globe2Icon,
+  GripVerticalIcon,
   EyeIcon,
   LayoutDashboardIcon,
+  LayoutGridIcon,
   LibraryIcon,
   MapPinIcon,
   MoreHorizontalIcon,
@@ -38,6 +40,7 @@ import {
   PaperclipIcon,
   PlusIcon,
   RouteIcon,
+  RotateCcwIcon,
   SearchIcon,
   ShieldCheckIcon,
   SmileIcon,
@@ -156,6 +159,12 @@ type WorkspaceView =
   | "knowledge"
   | "settings"
   | "notifications"
+type DashboardBlockId =
+  | "metrics"
+  | "decision"
+  | "flow-network"
+  | "capacity-risks"
+  | "movements-forecast"
 type KnowledgeStatus = "Ready" | "Indexing" | "Review"
 type ThemePreference = "light" | "dark" | "system"
 
@@ -439,6 +448,14 @@ const sidebarTools: PromptAction[] = [
 
 const groupOrder: ChatGroup[] = ["Recientes", "Ayer"]
 
+const defaultDashboardBlockOrder: DashboardBlockId[] = [
+  "metrics",
+  "decision",
+  "flow-network",
+  "capacity-risks",
+  "movements-forecast",
+]
+
 const dashboardMetricCards = [
   {
     label: "Ocupación promedio",
@@ -479,6 +496,46 @@ const dashboardMetricCards = [
   trend: string
   direction: "up" | "down"
   icon: LucideIcon
+}>
+
+const dashboardDecisionItems = [
+  {
+    title: "Descomprimir muelles de Ate",
+    what: "La ventana 14:00-17:00 supera la capacidad asignada y empuja backlog a despacho nocturno.",
+    impact: "S/ 214K en órdenes observadas y riesgo de -0.9 pp en SLA diario.",
+    owner: "Subgerencia Operaciones",
+    deadline: "Hoy 13:30",
+    action:
+      "Reasignar 2 muelles desde Lurín y adelantar recepción de Retail Norte.",
+    urgency: "Alta",
+  },
+  {
+    title: "Conciliar inventario de alta rotación",
+    what: "El WMS no coincide con conteo físico en SKU críticos para Farma Andina.",
+    impact: "S/ 92K retenidos y riesgo de quiebre en 3 rutas de última milla.",
+    owner: "Control de inventario",
+    deadline: "Hoy 16:00",
+    action:
+      "Bloquear liberación parcial hasta cerrar diferencia y aprobar sustitutos.",
+    urgency: "Media",
+  },
+  {
+    title: "Blindar rutas norte",
+    what: "Transportistas reportan variación de ETA por ventanas de entrega comprimidas.",
+    impact: "18 entregas con penalidad potencial y S/ 48K expuestos.",
+    owner: "Jefatura Transporte",
+    deadline: "Mañana 09:00",
+    action: "Activar backup carrier y mover 6 entregas de baja prioridad.",
+    urgency: "Media",
+  },
+] satisfies Array<{
+  title: string
+  what: string
+  impact: string
+  owner: string
+  deadline: string
+  action: string
+  urgency: "Alta" | "Media"
 }>
 
 const dashboardFlowData = [
@@ -986,6 +1043,10 @@ function makeMockReply(
   return `Con ${model}, aquí tienes una respuesta práctica: comienza por la intención principal, mantén la respuesta concisa y convierte la siguiente acción en algo que la interfaz pueda ejecutar de inmediato.${attachmentText}`
 }
 
+function makeDashboardInsightReply(context: string) {
+  return `Lectura ejecutiva: ${context} La decisión debe evaluarse por impacto económico, SLA comprometido y responsable directo. Mi recomendación es confirmar el dato fuente, priorizar el bloqueo si afecta ingresos o promesa comercial, y pedir una acción con hora límite y dueño único para evitar que quede como alerta sin cierre.`
+}
+
 function normalizeThemePreference(value: string | undefined): ThemePreference {
   if (value === "light" || value === "dark" || value === "system") {
     return value
@@ -1010,6 +1071,9 @@ export function AiChatShell() {
   const [voiceEnabled, setVoiceEnabled] = React.useState(false)
   const [attachments, setAttachments] = React.useState(0)
   const [notificationCount, setNotificationCount] = React.useState(1)
+  const [dashboardBlockOrder, setDashboardBlockOrder] = React.useState<
+    DashboardBlockId[]
+  >(defaultDashboardBlockOrder)
   const searchRef = React.useRef<HTMLInputElement>(null)
   const draftRef = React.useRef<HTMLTextAreaElement>(null)
 
@@ -1099,6 +1163,65 @@ export function AiChatShell() {
   function handleOpenAI() {
     setActiveView("chat")
     setMobileSidebarOpen(false)
+  }
+
+  function handleAskDashboardAI(context: string) {
+    const timestamp = makeTime()
+    const prompt = `Explícame este dato del dashboard y dime qué decisión debería tomar un gerente: ${context}`
+    const chatId = makeId("dashboard-ai")
+
+    setChats((current) => [
+      {
+        id: chatId,
+        title: "Análisis de dashboard",
+        group: "Recientes",
+        category: "Dashboard",
+        updatedAt: timestamp,
+        model,
+        messages: [
+          {
+            id: makeId("dashboard-ai-user"),
+            role: "user",
+            content: prompt,
+            at: timestamp,
+          },
+          {
+            id: makeId("dashboard-ai-assistant"),
+            role: "assistant",
+            content: makeDashboardInsightReply(context),
+            at: timestamp,
+          },
+        ],
+      },
+      ...current,
+    ])
+    setSelectedChatId(chatId)
+    setMode("Investigación")
+    setDraft("")
+    setActiveView("chat")
+    setMobileSidebarOpen(false)
+    requestAnimationFrame(() => draftRef.current?.focus())
+  }
+
+  function handleMoveDashboardBlock(
+    sourceBlockId: DashboardBlockId,
+    targetBlockId: DashboardBlockId
+  ) {
+    if (sourceBlockId === targetBlockId) {
+      return
+    }
+
+    setDashboardBlockOrder((current) => {
+      const next = current.filter((blockId) => blockId !== sourceBlockId)
+      const targetIndex = next.indexOf(targetBlockId)
+
+      if (targetIndex < 0) {
+        return current
+      }
+
+      next.splice(targetIndex, 0, sourceBlockId)
+      return next
+    })
   }
 
   function handleOpenKnowledgeBase() {
@@ -1199,7 +1322,14 @@ export function AiChatShell() {
         key={activeSection}
       >
         {activeView === "dashboard" ? (
-          <DashboardView />
+          <DashboardView
+            blockOrder={dashboardBlockOrder}
+            onAskAI={handleAskDashboardAI}
+            onMoveBlock={handleMoveDashboardBlock}
+            onResetLayout={() =>
+              setDashboardBlockOrder(defaultDashboardBlockOrder)
+            }
+          />
         ) : (
           <div className="px-2 pt-2 pb-2 sm:px-2.5 sm:pt-3">
             <Card className="h-[calc(100svh-4.25rem)] rounded-lg py-0 shadow-none ring-border sm:h-[calc(100svh-4.75rem)]">
@@ -2867,10 +2997,6 @@ function ChatWorkspace({
     onToggleVoice()
   }
 
-  if (activeView === "dashboard") {
-    return <DashboardView />
-  }
-
   if (activeView === "settings") {
     return (
       <ChatSettingsView
@@ -3078,14 +3204,85 @@ function ChatWorkspace({
   )
 }
 
-function DashboardView() {
+function DashboardView({
+  blockOrder,
+  onAskAI,
+  onMoveBlock,
+  onResetLayout,
+}: {
+  blockOrder: DashboardBlockId[]
+  onAskAI: (context: string) => void
+  onMoveBlock: (
+    sourceBlockId: DashboardBlockId,
+    targetBlockId: DashboardBlockId
+  ) => void
+  onResetLayout: () => void
+}) {
+  const [layoutEditMode, setLayoutEditMode] = React.useState(false)
+  const [draggingBlockId, setDraggingBlockId] =
+    React.useState<DashboardBlockId | null>(null)
+  const [overBlockId, setOverBlockId] = React.useState<DashboardBlockId | null>(
+    null
+  )
+
+  function getBlockOrder(blockId: DashboardBlockId) {
+    return blockOrder.indexOf(blockId) + 1
+  }
+
+  function handleDragStart(
+    event: React.DragEvent<HTMLDivElement>,
+    blockId: DashboardBlockId
+  ) {
+    if (!layoutEditMode) {
+      return
+    }
+
+    event.dataTransfer.effectAllowed = "move"
+    event.dataTransfer.setData("text/plain", blockId)
+    setDraggingBlockId(blockId)
+  }
+
+  function handleDragOver(
+    event: React.DragEvent<HTMLDivElement>,
+    blockId: DashboardBlockId
+  ) {
+    if (!layoutEditMode) {
+      return
+    }
+
+    event.preventDefault()
+    setOverBlockId(blockId)
+  }
+
+  function handleDrop(
+    event: React.DragEvent<HTMLDivElement>,
+    blockId: DashboardBlockId
+  ) {
+    if (!layoutEditMode) {
+      return
+    }
+
+    event.preventDefault()
+    const sourceBlockId = event.dataTransfer.getData(
+      "text/plain"
+    ) as DashboardBlockId
+    onMoveBlock(sourceBlockId, blockId)
+    setDraggingBlockId(null)
+    setOverBlockId(null)
+  }
+
+  function handleDragEnd() {
+    setDraggingBlockId(null)
+    setOverBlockId(null)
+  }
+
   return (
     <section
       aria-label="Dashboard operativo"
       className="h-[calc(100svh-3.5rem)] overflow-hidden bg-background sm:h-[calc(100svh-4rem)]"
     >
       <ScrollArea className="h-full">
-        <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-4 sm:px-5 lg:px-6">
+        <div className="relative mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-4 sm:px-5 lg:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex min-w-0 flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -3125,81 +3322,97 @@ function DashboardView() {
                 <FileTextIcon data-icon="inline-start" />
                 Exportar
               </Button>
+              {layoutEditMode ? (
+                <Button onClick={onResetLayout} size="sm" variant="outline">
+                  <RotateCcwIcon data-icon="inline-start" />
+                  Restaurar
+                </Button>
+              ) : null}
+              <Button
+                onClick={() => setLayoutEditMode((value) => !value)}
+                size="sm"
+                variant={layoutEditMode ? "default" : "secondary"}
+              >
+                <LayoutGridIcon data-icon="inline-start" />
+                {layoutEditMode ? "Listo" : "Reordenar"}
+              </Button>
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {dashboardMetricCards.map((metric) => (
-              <DashboardMetricCard key={metric.label} metric={metric} />
-            ))}
-          </div>
+          {layoutEditMode ? (
+            <div className="pointer-events-none absolute inset-x-2 top-32 bottom-2 rounded-xl bg-background/45 backdrop-blur-[1px]" />
+          ) : null}
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)]">
-            <Card className="overflow-hidden py-0">
-              <Tabs className="gap-0" defaultValue="volumen">
-                <CardHeader className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <RouteIcon />
-                      Flujo operativo semanal
-                    </CardTitle>
-                    <CardDescription>
-                      Ingresos, salidas y presión de backlog por día.
-                    </CardDescription>
-                  </div>
-                  <TabsList>
-                    <TabsTrigger value="volumen">Volumen</TabsTrigger>
-                    <TabsTrigger value="sla">SLA</TabsTrigger>
-                  </TabsList>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <TabsContent className="mt-0" value="volumen">
-                    <ChartContainer
-                      className="aspect-auto h-[285px] w-full"
-                      config={dashboardFlowConfig}
-                    >
-                      <AreaChart
-                        accessibilityLayer
-                        data={dashboardFlowData}
-                        margin={{ left: 0, right: 12, top: 10 }}
-                      >
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                          axisLine={false}
-                          dataKey="day"
-                          tickLine={false}
-                          tickMargin={8}
-                        />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tickMargin={8}
-                          width={38}
-                        />
-                        <ChartTooltip
-                          content={<ChartTooltipContent indicator="line" />}
-                        />
-                        <Area
-                          dataKey="ingreso"
-                          fill="var(--color-ingreso)"
-                          fillOpacity={0.16}
-                          stroke="var(--color-ingreso)"
-                          strokeWidth={2}
-                          type="natural"
-                        />
-                        <Area
-                          dataKey="salida"
-                          fill="var(--color-salida)"
-                          fillOpacity={0.1}
-                          stroke="var(--color-salida)"
-                          strokeWidth={2}
-                          type="natural"
-                        />
-                      </AreaChart>
-                    </ChartContainer>
-                  </TabsContent>
-                  <TabsContent className="mt-0" value="sla">
-                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <DashboardReorderBlock
+            blockId="metrics"
+            draggingBlockId={draggingBlockId}
+            editMode={layoutEditMode}
+            label="KPIs"
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
+            order={getBlockOrder("metrics")}
+            overBlockId={overBlockId}
+          >
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {dashboardMetricCards.map((metric) => (
+                <DashboardMetricCard
+                  key={metric.label}
+                  metric={metric}
+                  onAskAI={onAskAI}
+                />
+              ))}
+            </div>
+          </DashboardReorderBlock>
+
+          <DashboardReorderBlock
+            blockId="decision"
+            draggingBlockId={draggingBlockId}
+            editMode={layoutEditMode}
+            label="Decisión"
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
+            order={getBlockOrder("decision")}
+            overBlockId={overBlockId}
+          >
+            <DashboardDecisionLayer onAskAI={onAskAI} />
+          </DashboardReorderBlock>
+
+          <DashboardReorderBlock
+            blockId="flow-network"
+            draggingBlockId={draggingBlockId}
+            editMode={layoutEditMode}
+            label="Flujo y red"
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
+            order={getBlockOrder("flow-network")}
+            overBlockId={overBlockId}
+          >
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)]">
+              <Card className="overflow-hidden py-0">
+                <Tabs className="gap-0" defaultValue="volumen">
+                  <CardHeader className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <RouteIcon />
+                        Flujo operativo semanal
+                      </CardTitle>
+                      <CardDescription>
+                        Ingresos, salidas y presión de backlog por día.
+                      </CardDescription>
+                    </div>
+                    <TabsList>
+                      <TabsTrigger value="volumen">Volumen</TabsTrigger>
+                      <TabsTrigger value="sla">SLA</TabsTrigger>
+                    </TabsList>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <TabsContent className="mt-0" value="volumen">
                       <ChartContainer
                         className="aspect-auto h-[285px] w-full"
                         config={dashboardFlowConfig}
@@ -3218,237 +3431,533 @@ function DashboardView() {
                           />
                           <YAxis
                             axisLine={false}
-                            domain={[90, 100]}
                             tickLine={false}
                             tickMargin={8}
-                            width={34}
+                            width={38}
                           />
                           <ChartTooltip
                             content={<ChartTooltipContent indicator="line" />}
                           />
                           <Area
-                            dataKey="sla"
-                            fill="var(--color-sla)"
-                            fillOpacity={0.18}
-                            stroke="var(--color-sla)"
+                            dataKey="ingreso"
+                            fill="var(--color-ingreso)"
+                            fillOpacity={0.16}
+                            stroke="var(--color-ingreso)"
+                            strokeWidth={2}
+                            type="natural"
+                          />
+                          <Area
+                            dataKey="salida"
+                            fill="var(--color-salida)"
+                            fillOpacity={0.1}
+                            stroke="var(--color-salida)"
                             strokeWidth={2}
                             type="natural"
                           />
                         </AreaChart>
                       </ChartContainer>
-                      <div className="flex flex-col justify-center gap-3 rounded-lg border bg-muted/20 p-4">
-                        <div>
-                          <p className="text-sm font-medium">Objetivo SLA</p>
-                          <p className="text-xs text-muted-foreground">
-                            Meta mensual contratada
+                    </TabsContent>
+                    <TabsContent className="mt-0" value="sla">
+                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+                        <ChartContainer
+                          className="aspect-auto h-[285px] w-full"
+                          config={dashboardFlowConfig}
+                        >
+                          <AreaChart
+                            accessibilityLayer
+                            data={dashboardFlowData}
+                            margin={{ left: 0, right: 12, top: 10 }}
+                          >
+                            <CartesianGrid vertical={false} />
+                            <XAxis
+                              axisLine={false}
+                              dataKey="day"
+                              tickLine={false}
+                              tickMargin={8}
+                            />
+                            <YAxis
+                              axisLine={false}
+                              domain={[90, 100]}
+                              tickLine={false}
+                              tickMargin={8}
+                              width={34}
+                            />
+                            <ChartTooltip
+                              content={<ChartTooltipContent indicator="line" />}
+                            />
+                            <Area
+                              dataKey="sla"
+                              fill="var(--color-sla)"
+                              fillOpacity={0.18}
+                              stroke="var(--color-sla)"
+                              strokeWidth={2}
+                              type="natural"
+                            />
+                          </AreaChart>
+                        </ChartContainer>
+                        <div className="flex flex-col justify-center gap-3 rounded-lg border bg-muted/20 p-4">
+                          <div>
+                            <p className="text-sm font-medium">Objetivo SLA</p>
+                            <p className="text-xs text-muted-foreground">
+                              Meta mensual contratada
+                            </p>
+                          </div>
+                          <div className="flex items-end gap-2">
+                            <span className="text-3xl font-medium">96.4%</span>
+                            <Badge variant="secondary">+1.8%</Badge>
+                          </div>
+                          <Progress value={96} />
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            El SLA se sostiene por encima de la meta, pero Ate
+                            concentra las excepciones del día.
                           </p>
                         </div>
-                        <div className="flex items-end gap-2">
-                          <span className="text-3xl font-medium">96.4%</span>
-                          <Badge variant="secondary">+1.8%</Badge>
-                        </div>
-                        <Progress value={96} />
-                        <p className="text-xs leading-relaxed text-muted-foreground">
-                          El SLA se sostiene por encima de la meta, pero Ate
-                          concentra las excepciones del día.
-                        </p>
                       </div>
-                    </div>
-                  </TabsContent>
-                </CardContent>
-              </Tabs>
-            </Card>
+                    </TabsContent>
+                  </CardContent>
+                </Tabs>
+              </Card>
 
-            <Card className="overflow-hidden py-0">
-              <CardHeader className="border-b p-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ShieldCheckIcon />
-                  Salud de red
-                </CardTitle>
-                <CardDescription>
-                  Sedes activas, ocupación y pedidos del día.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4 p-4">
-                {warehouseNetwork.map((site) => (
-                  <DashboardNetworkRow key={site.site} site={site} />
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.05fr)]">
-            <Card className="overflow-hidden py-0">
-              <CardHeader className="border-b p-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <GaugeIcon />
-                  Capacidad por sede
-                </CardTitle>
-                <CardDescription>
-                  Ocupación de almacén y utilización de muelles.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4">
-                <ChartContainer
-                  className="aspect-auto h-[300px] w-full"
-                  config={warehouseCapacityConfig}
-                >
-                  <BarChart
-                    accessibilityLayer
-                    data={warehouseCapacityData}
-                    layout="vertical"
-                    margin={{ left: 10, right: 14, top: 8 }}
-                  >
-                    <CartesianGrid horizontal={false} />
-                    <XAxis
-                      axisLine={false}
-                      domain={[0, 100]}
-                      hide
-                      tickLine={false}
-                      type="number"
-                    />
-                    <YAxis
-                      axisLine={false}
-                      dataKey="site"
-                      tickLine={false}
-                      tickMargin={8}
-                      type="category"
-                      width={72}
-                    />
-                    <ChartTooltip
-                      content={<ChartTooltipContent indicator="line" />}
-                    />
-                    <Bar
-                      dataKey="ocupacion"
-                      fill="var(--color-ocupacion)"
-                      radius={5}
-                    />
-                    <Bar
-                      dataKey="muelles"
-                      fill="var(--color-muelles)"
-                      radius={5}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden py-0">
-              <CardHeader className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
+              <Card className="overflow-hidden py-0">
+                <CardHeader className="border-b p-4">
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <AlertTriangleIcon />
-                    Riesgos priorizados
+                    <ShieldCheckIcon />
+                    Salud de red
                   </CardTitle>
                   <CardDescription>
-                    Bloqueos operativos con dueño y ventana de decisión.
+                    Sedes activas, ocupación y pedidos del día.
                   </CardDescription>
-                </div>
-                <Badge variant="destructive">3 activos</Badge>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 p-4">
-                {dashboardRisks.map((risk) => (
-                  <DashboardRiskItem key={risk.title} risk={risk} />
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4 p-4">
+                  {warehouseNetwork.map((site) => (
+                    <DashboardNetworkRow
+                      key={site.site}
+                      onAskAI={onAskAI}
+                      site={site}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </DashboardReorderBlock>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
-            <Card className="overflow-hidden py-0">
-              <CardHeader className="border-b p-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TruckIcon />
-                  Movimientos críticos
-                </CardTitle>
-                <CardDescription>
-                  Órdenes que impactan facturación, SLA o promesa comercial.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Orden</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Sede</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>ETA</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {criticalMovements.map((movement) => (
-                      <TableRow key={movement.order}>
-                        <TableCell className="font-medium">
-                          {movement.order}
-                        </TableCell>
-                        <TableCell>{movement.client}</TableCell>
-                        <TableCell>{movement.site}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              movement.status === "Observado"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {movement.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{movement.eta}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          {movement.value}
-                        </TableCell>
+          <DashboardReorderBlock
+            blockId="capacity-risks"
+            draggingBlockId={draggingBlockId}
+            editMode={layoutEditMode}
+            label="Capacidad y riesgos"
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
+            order={getBlockOrder("capacity-risks")}
+            overBlockId={overBlockId}
+          >
+            <div className="grid gap-4 xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.05fr)]">
+              <Card className="overflow-hidden py-0">
+                <CardHeader className="border-b p-4">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <GaugeIcon />
+                    Capacidad por sede
+                  </CardTitle>
+                  <CardDescription>
+                    Ocupación de almacén y utilización de muelles.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <ChartContainer
+                    className="aspect-auto h-[300px] w-full"
+                    config={warehouseCapacityConfig}
+                  >
+                    <BarChart
+                      accessibilityLayer
+                      data={warehouseCapacityData}
+                      layout="vertical"
+                      margin={{ left: 10, right: 14, top: 8 }}
+                    >
+                      <CartesianGrid horizontal={false} />
+                      <XAxis
+                        axisLine={false}
+                        domain={[0, 100]}
+                        hide
+                        tickLine={false}
+                        type="number"
+                      />
+                      <YAxis
+                        axisLine={false}
+                        dataKey="site"
+                        tickLine={false}
+                        tickMargin={8}
+                        type="category"
+                        width={72}
+                      />
+                      <ChartTooltip
+                        content={<ChartTooltipContent indicator="line" />}
+                      />
+                      <Bar
+                        dataKey="ocupacion"
+                        fill="var(--color-ocupacion)"
+                        radius={5}
+                      />
+                      <Bar
+                        dataKey="muelles"
+                        fill="var(--color-muelles)"
+                        radius={5}
+                      />
+                    </BarChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden py-0">
+                <CardHeader className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <AlertTriangleIcon />
+                      Riesgos priorizados
+                    </CardTitle>
+                    <CardDescription>
+                      Bloqueos operativos con dueño y ventana de decisión.
+                    </CardDescription>
+                  </div>
+                  <Badge variant="destructive">3 activos</Badge>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 p-4">
+                  {dashboardRisks.map((risk) => (
+                    <DashboardRiskItem
+                      key={risk.title}
+                      onAskAI={onAskAI}
+                      risk={risk}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </DashboardReorderBlock>
+
+          <DashboardReorderBlock
+            blockId="movements-forecast"
+            draggingBlockId={draggingBlockId}
+            editMode={layoutEditMode}
+            label="Movimientos y forecast"
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
+            order={getBlockOrder("movements-forecast")}
+            overBlockId={overBlockId}
+          >
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
+              <Card className="overflow-hidden py-0">
+                <CardHeader className="border-b p-4">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <TruckIcon />
+                    Movimientos críticos
+                  </CardTitle>
+                  <CardDescription>
+                    Órdenes que impactan facturación, SLA o promesa comercial.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Orden</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Sede</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>ETA</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {criticalMovements.map((movement) => {
+                        const aiContext = `Movimiento crítico ${movement.order}: cliente ${movement.client}, sede ${movement.site}, estado ${movement.status}, ETA ${movement.eta}, valor ${movement.value}.`
 
-            <Card className="overflow-hidden py-0">
-              <CardHeader className="border-b p-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ClockIcon />
-                  Forecast 48 h
-                </CardTitle>
-                <CardDescription>
-                  Carga esperada por ventana operativa.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 p-4">
-                {forecastWindows.map((window) => (
-                  <DashboardForecastItem key={window.label} window={window} />
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+                        return (
+                          <TableRow className="group/data" key={movement.order}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <span>{movement.order}</span>
+                                <DashboardAskAIButton
+                                  context={aiContext}
+                                  onAskAI={onAskAI}
+                                />
+                              </div>
+                            </TableCell>
+                            <TableCell>{movement.client}</TableCell>
+                            <TableCell>{movement.site}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  movement.status === "Observado"
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
+                                {movement.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{movement.eta}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              {movement.value}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden py-0">
+                <CardHeader className="border-b p-4">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <ClockIcon />
+                    Forecast 48 h
+                  </CardTitle>
+                  <CardDescription>
+                    Carga esperada por ventana operativa.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 p-4">
+                  {forecastWindows.map((window) => (
+                    <DashboardForecastItem key={window.label} window={window} />
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </DashboardReorderBlock>
         </div>
       </ScrollArea>
     </section>
   )
 }
 
+function DashboardReorderBlock({
+  blockId,
+  children,
+  draggingBlockId,
+  editMode,
+  label,
+  onDragEnd,
+  onDragOver,
+  onDragStart,
+  onDrop,
+  order,
+  overBlockId,
+}: {
+  blockId: DashboardBlockId
+  children: React.ReactNode
+  draggingBlockId: DashboardBlockId | null
+  editMode: boolean
+  label: string
+  onDragEnd: () => void
+  onDragOver: (
+    event: React.DragEvent<HTMLDivElement>,
+    blockId: DashboardBlockId
+  ) => void
+  onDragStart: (
+    event: React.DragEvent<HTMLDivElement>,
+    blockId: DashboardBlockId
+  ) => void
+  onDrop: (
+    event: React.DragEvent<HTMLDivElement>,
+    blockId: DashboardBlockId
+  ) => void
+  order: number
+  overBlockId: DashboardBlockId | null
+}) {
+  const isDragging = draggingBlockId === blockId
+  const isDropTarget = overBlockId === blockId && draggingBlockId !== blockId
+
+  return (
+    <div
+      aria-label={label}
+      className={cn(
+        "relative transition-[background-color,box-shadow,opacity,transform] duration-300 ease-out",
+        editMode &&
+          "cursor-grab rounded-xl bg-background/80 p-1 shadow-xl ring-1 ring-border backdrop-blur-sm active:cursor-grabbing",
+        isDragging && "scale-[0.985] opacity-45",
+        isDropTarget && "translate-y-1 bg-muted/40 ring-primary/40"
+      )}
+      draggable={editMode}
+      onDragEnd={onDragEnd}
+      onDragOver={(event) => onDragOver(event, blockId)}
+      onDragStart={(event) => onDragStart(event, blockId)}
+      onDrop={(event) => onDrop(event, blockId)}
+      style={{ order }}
+    >
+      {editMode ? (
+        <div className="absolute -top-3 left-3 flex items-center gap-1.5">
+          <Button
+            aria-label={`Mover ${label}`}
+            className="h-6 rounded-full px-2 text-[11px] shadow-sm"
+            size="xs"
+            variant="secondary"
+          >
+            <GripVerticalIcon data-icon="inline-start" />
+            {label}
+          </Button>
+        </div>
+      ) : null}
+      {children}
+    </div>
+  )
+}
+
+function DashboardAskAIButton({
+  className,
+  context,
+  onAskAI,
+}: {
+  className?: string
+  context: string
+  onAskAI: (context: string) => void
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label="Explicar con AI"
+          className={cn(
+            "h-6 gap-1 rounded-full px-2 text-[11px] opacity-0 transition-[opacity,transform] duration-300 ease-out group-hover/data:opacity-100 hover:scale-[1.03] focus-visible:opacity-100",
+            className
+          )}
+          onClick={(event) => {
+            event.stopPropagation()
+            onAskAI(context)
+          }}
+          size="xs"
+          variant="secondary"
+        >
+          <BrainCircuitIcon data-icon="inline-start" />
+          AI
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Explicar este dato con AI</TooltipContent>
+    </Tooltip>
+  )
+}
+
+function DashboardDecisionLayer({
+  onAskAI,
+}: {
+  onAskAI: (context: string) => void
+}) {
+  return (
+    <Card className="overflow-hidden py-0">
+      <CardHeader className="border-b p-4">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShieldCheckIcon />
+              Capa de decisión
+            </CardTitle>
+            <CardDescription>
+              Qué pasa, cuánto importa, quién actúa y antes de cuándo.
+            </CardDescription>
+          </div>
+          <Badge variant="secondary">Prioridad gerencial</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4 xl:grid-cols-3">
+        {dashboardDecisionItems.map((decision) => {
+          const aiContext = `Decisión: ${decision.title}. Qué pasa: ${decision.what} Cuánto importa: ${decision.impact} Quién actúa: ${decision.owner}. Antes de cuándo: ${decision.deadline}. Acción recomendada: ${decision.action}`
+
+          return (
+            <div
+              className="group/data flex flex-col gap-3 rounded-lg border bg-background p-3 transition-[background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:bg-muted/20 hover:shadow-sm"
+              key={decision.title}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium">{decision.title}</p>
+                    <Badge
+                      variant={
+                        decision.urgency === "Alta" ? "destructive" : "outline"
+                      }
+                    >
+                      {decision.urgency}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Acción: {decision.action}
+                  </p>
+                </div>
+                <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                <DashboardDecisionField
+                  label="Qué pasa"
+                  value={decision.what}
+                />
+                <DashboardDecisionField
+                  label="Cuánto importa"
+                  value={decision.impact}
+                />
+                <DashboardDecisionField
+                  label="Quién actúa"
+                  value={decision.owner}
+                />
+                <DashboardDecisionField
+                  label="Antes de cuándo"
+                  value={decision.deadline}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashboardDecisionField({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className="rounded-lg bg-muted/30 p-3">
+      <p className="text-[11px] font-medium text-muted-foreground uppercase">
+        {label}
+      </p>
+      <p className="mt-1 text-xs leading-relaxed">{value}</p>
+    </div>
+  )
+}
+
 function DashboardMetricCard({
+  onAskAI,
   metric,
 }: {
+  onAskAI: (context: string) => void
   metric: (typeof dashboardMetricCards)[number]
 }) {
   const TrendIcon =
     metric.direction === "up" ? ArrowUpRightIcon : ArrowDownRightIcon
+  const aiContext = `${metric.label}: ${metric.value}. ${metric.detail}. Variación ${metric.trend}.`
 
   return (
-    <Card className="overflow-hidden transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm">
+    <Card className="group/data overflow-hidden transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm">
       <CardContent className="flex flex-col gap-4 p-4">
         <div className="flex items-start justify-between gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/30">
             <metric.icon />
           </span>
-          <Badge variant={metric.direction === "up" ? "secondary" : "outline"}>
-            <TrendIcon data-icon="inline-start" />
-            {metric.trend}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <Badge
+              variant={metric.direction === "up" ? "secondary" : "outline"}
+            >
+              <TrendIcon data-icon="inline-start" />
+              {metric.trend}
+            </Badge>
+            <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
+          </div>
         </div>
         <div className="min-w-0">
           <p className="text-sm text-muted-foreground">{metric.label}</p>
@@ -3465,12 +3974,16 @@ function DashboardMetricCard({
 }
 
 function DashboardNetworkRow({
+  onAskAI,
   site,
 }: {
+  onAskAI: (context: string) => void
   site: (typeof warehouseNetwork)[number]
 }) {
+  const aiContext = `Sede ${site.site}, región ${site.region}: ocupación ${site.occupancy}%, SLA ${site.sla}, ${site.orders} pedidos, estado ${site.state}.`
+
   return (
-    <div className="flex flex-col gap-2 rounded-lg border bg-background p-3">
+    <div className="group/data flex flex-col gap-2 rounded-lg border bg-background p-3 transition-[background-color,box-shadow] duration-300 ease-out hover:bg-muted/20 hover:shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{site.site}</p>
@@ -3479,9 +3992,12 @@ function DashboardNetworkRow({
             {site.region}
           </p>
         </div>
-        <Badge variant={site.state === "Normal" ? "secondary" : "outline"}>
-          {site.state}
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          <Badge variant={site.state === "Normal" ? "secondary" : "outline"}>
+            {site.state}
+          </Badge>
+          <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
+        </div>
       </div>
       <Progress value={site.occupancy} />
       <div className="grid grid-cols-3 gap-2 text-xs">
@@ -3503,12 +4019,16 @@ function DashboardNetworkRow({
 }
 
 function DashboardRiskItem({
+  onAskAI,
   risk,
 }: {
+  onAskAI: (context: string) => void
   risk: (typeof dashboardRisks)[number]
 }) {
+  const aiContext = `Riesgo: ${risk.title}. ${risk.detail} Responsable: ${risk.owner}. Severidad ${risk.severity}. Deadline ${risk.eta}.`
+
   return (
-    <div className="grid gap-3 rounded-lg border bg-background p-3 sm:grid-cols-[1fr_auto]">
+    <div className="group/data grid gap-3 rounded-lg border bg-background p-3 transition-[background-color,box-shadow] duration-300 ease-out hover:bg-muted/20 hover:shadow-sm sm:grid-cols-[1fr_auto]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-medium">{risk.title}</p>
@@ -3520,9 +4040,12 @@ function DashboardRiskItem({
           {risk.detail}
         </p>
       </div>
-      <div className="flex min-w-28 flex-col gap-1 text-xs text-muted-foreground sm:text-right">
-        <span>{risk.owner}</span>
-        <span className="font-medium text-foreground">{risk.eta}</span>
+      <div className="flex min-w-28 items-start justify-between gap-2 text-xs text-muted-foreground sm:justify-end sm:text-right">
+        <div className="flex flex-col gap-1">
+          <span>{risk.owner}</span>
+          <span className="font-medium text-foreground">{risk.eta}</span>
+        </div>
+        <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
       </div>
     </div>
   )
