@@ -4,9 +4,14 @@ import * as React from "react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import {
+  AlertTriangleIcon,
   ArrowUpIcon,
+  ArrowDownRightIcon,
+  ArrowUpRightIcon,
   BellIcon,
   BrainCircuitIcon,
+  Building2Icon,
+  CalendarClockIcon,
   CircleCheckIcon,
   CheckIcon,
   ChevronLeftIcon,
@@ -17,26 +22,45 @@ import {
   FileTextIcon,
   FlaskConicalIcon,
   FolderIcon,
+  GaugeIcon,
   Globe2Icon,
   EyeIcon,
+  LayoutDashboardIcon,
   LibraryIcon,
+  MapPinIcon,
   MoreHorizontalIcon,
   MicIcon,
   MoonIcon,
+  PackageCheckIcon,
   PaintbrushIcon,
   PaletteIcon,
   PanelLeftIcon,
   PaperclipIcon,
   PlusIcon,
+  RouteIcon,
   SearchIcon,
+  ShieldCheckIcon,
   SmileIcon,
   SlidersHorizontalIcon,
   SunIcon,
+  TrendingUpIcon,
+  TruckIcon,
   UploadIcon,
+  WarehouseIcon,
   ZoomInIcon,
   ZoomOutIcon,
+  MaximizeIcon,
   type LucideIcon,
 } from "lucide-react"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
@@ -49,6 +73,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@workspace/ui/components/chart"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@workspace/ui/components/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +103,7 @@ import {
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
 import { Kbd } from "@workspace/ui/components/kbd"
+import { Progress } from "@workspace/ui/components/progress"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Select,
@@ -97,6 +136,10 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
 import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@workspace/ui/components/toggle-group"
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -107,7 +150,12 @@ import { NotificationsView } from "./notifications-view"
 
 type ChatGroup = "Recientes" | "Ayer"
 type MessageRole = "user" | "assistant"
-type WorkspaceView = "chat" | "knowledge" | "settings" | "notifications"
+type WorkspaceView =
+  | "dashboard"
+  | "chat"
+  | "knowledge"
+  | "settings"
+  | "notifications"
 type KnowledgeStatus = "Ready" | "Indexing" | "Review"
 type ThemePreference = "light" | "dark" | "system"
 
@@ -390,6 +438,197 @@ const sidebarTools: PromptAction[] = [
 ]
 
 const groupOrder: ChatGroup[] = ["Recientes", "Ayer"]
+
+const dashboardMetricCards = [
+  {
+    label: "Ocupación promedio",
+    value: "87%",
+    detail: "14 sedes sobre meta operativa",
+    trend: "+4.2%",
+    direction: "up",
+    icon: WarehouseIcon,
+  },
+  {
+    label: "SLA de despacho",
+    value: "96.4%",
+    detail: "18,420 pedidos sin retraso",
+    trend: "+1.8%",
+    direction: "up",
+    icon: PackageCheckIcon,
+  },
+  {
+    label: "Ingresos logísticos",
+    value: "S/ 2.84M",
+    detail: "Facturación estimada del mes",
+    trend: "+12.6%",
+    direction: "up",
+    icon: TrendingUpIcon,
+  },
+  {
+    label: "Incidencias críticas",
+    value: "7",
+    detail: "3 requieren decisión hoy",
+    trend: "-18%",
+    direction: "down",
+    icon: AlertTriangleIcon,
+  },
+] satisfies Array<{
+  label: string
+  value: string
+  detail: string
+  trend: string
+  direction: "up" | "down"
+  icon: LucideIcon
+}>
+
+const dashboardFlowData = [
+  { day: "Lun", ingreso: 1280, salida: 1190, backlog: 82, sla: 95.2 },
+  { day: "Mar", ingreso: 1420, salida: 1360, backlog: 74, sla: 96.1 },
+  { day: "Mié", ingreso: 1515, salida: 1488, backlog: 61, sla: 96.8 },
+  { day: "Jue", ingreso: 1390, salida: 1452, backlog: 54, sla: 97.1 },
+  { day: "Vie", ingreso: 1660, salida: 1588, backlog: 69, sla: 96.4 },
+  { day: "Sáb", ingreso: 1184, salida: 1098, backlog: 72, sla: 95.9 },
+]
+
+const dashboardFlowConfig = {
+  ingreso: {
+    label: "Ingresos",
+    color: "var(--chart-2)",
+  },
+  salida: {
+    label: "Salidas",
+    color: "var(--chart-1)",
+  },
+  backlog: {
+    label: "Backlog",
+    color: "var(--chart-4)",
+  },
+  sla: {
+    label: "SLA",
+    color: "var(--chart-3)",
+  },
+} satisfies ChartConfig
+
+const warehouseCapacityData = [
+  { site: "Callao", ocupacion: 92, muelles: 84 },
+  { site: "Lurín", ocupacion: 88, muelles: 77 },
+  { site: "Ate", ocupacion: 83, muelles: 71 },
+  { site: "Arequipa", ocupacion: 79, muelles: 69 },
+  { site: "Trujillo", ocupacion: 74, muelles: 62 },
+]
+
+const warehouseCapacityConfig = {
+  ocupacion: {
+    label: "Ocupación",
+    color: "var(--chart-1)",
+  },
+  muelles: {
+    label: "Muelles",
+    color: "var(--chart-3)",
+  },
+} satisfies ChartConfig
+
+const warehouseNetwork = [
+  {
+    site: "Callao",
+    region: "Lima",
+    occupancy: 92,
+    sla: "97.8%",
+    orders: "6,248",
+    state: "Normal",
+  },
+  {
+    site: "Lurín",
+    region: "Lima Sur",
+    occupancy: 88,
+    sla: "96.9%",
+    orders: "4,906",
+    state: "Normal",
+  },
+  {
+    site: "Ate",
+    region: "Lima Este",
+    occupancy: 83,
+    sla: "94.7%",
+    orders: "3,184",
+    state: "Atención",
+  },
+  {
+    site: "Arequipa",
+    region: "Sur",
+    occupancy: 79,
+    sla: "96.1%",
+    orders: "2,102",
+    state: "Normal",
+  },
+]
+
+const dashboardRisks = [
+  {
+    title: "Congestión en muelles de Ate",
+    detail: "Ventana de recepción 14:00-17:00 supera la capacidad asignada.",
+    owner: "Operaciones",
+    severity: "Alta",
+    eta: "Hoy",
+  },
+  {
+    title: "Inventario pendiente de conciliación",
+    detail: "SKU de alta rotación con diferencia entre WMS y conteo físico.",
+    owner: "Control",
+    severity: "Media",
+    eta: "Mañana",
+  },
+  {
+    title: "Rutas norte con variación de ETA",
+    detail:
+      "Transportistas reportan demora por ventanas de entrega comprimidas.",
+    owner: "Transporte",
+    severity: "Media",
+    eta: "48 h",
+  },
+]
+
+const criticalMovements = [
+  {
+    order: "BSF-48192",
+    client: "Retail Norte",
+    site: "Callao",
+    status: "En despacho",
+    eta: "13:40",
+    value: "S/ 184K",
+  },
+  {
+    order: "BSF-48175",
+    client: "Agroexport Sur",
+    site: "Arequipa",
+    status: "Recepción",
+    eta: "15:10",
+    value: "S/ 126K",
+  },
+  {
+    order: "BSF-48166",
+    client: "Farma Andina",
+    site: "Lurín",
+    status: "Picking",
+    eta: "16:25",
+    value: "S/ 92K",
+  },
+  {
+    order: "BSF-48141",
+    client: "Consumo Masivo",
+    site: "Ate",
+    status: "Observado",
+    eta: "18:00",
+    value: "S/ 214K",
+  },
+]
+
+const forecastWindows = [
+  { label: "0-12 h", value: "4,820", detail: "pedidos", load: 72 },
+  { label: "12-24 h", value: "6,140", detail: "pedidos", load: 84 },
+  { label: "24-36 h", value: "5,390", detail: "pedidos", load: 76 },
+  { label: "36-48 h", value: "4,210", detail: "pedidos", load: 61 },
+]
 
 const knowledgeFolders: KnowledgeFolder[] = [
   {
@@ -852,6 +1091,16 @@ export function AiChatShell() {
     requestAnimationFrame(() => draftRef.current?.focus())
   }
 
+  function handleOpenDashboard() {
+    setActiveView("dashboard")
+    setMobileSidebarOpen(false)
+  }
+
+  function handleOpenAI() {
+    setActiveView("chat")
+    setMobileSidebarOpen(false)
+  }
+
   function handleOpenKnowledgeBase() {
     setActiveView("knowledge")
     setMobileSidebarOpen(false)
@@ -927,11 +1176,16 @@ export function AiChatShell() {
     setAttachments(0)
   }
 
+  const activeSection = activeView === "dashboard" ? "dashboard" : "ai"
+
   return (
     <main className="min-h-svh overflow-hidden bg-background text-foreground">
       <TopBar
+        activeSection={activeSection}
         notificationCount={notificationCount}
         onClearNotifications={() => setNotificationCount(0)}
+        onOpenAI={handleOpenAI}
+        onOpenDashboard={handleOpenDashboard}
         onToggleSidebar={handleToggleSidebar}
         onToggleTheme={() =>
           setTheme(resolvedTheme === "dark" ? "light" : "dark")
@@ -940,53 +1194,62 @@ export function AiChatShell() {
         theme={resolvedTheme}
       />
 
-      <div className="px-2 pt-2 pb-2 sm:px-2.5 sm:pt-3">
-        <Card className="h-[calc(100svh-4.25rem)] rounded-lg py-0 shadow-none ring-border sm:h-[calc(100svh-4.75rem)]">
-          <CardContent
-            className={cn(
-              "grid h-full min-h-0 p-0 transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none",
-              desktopSidebarOpen
-                ? "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"
-                : "lg:grid-cols-1"
-            )}
-          >
-            {desktopSidebarOpen ? (
-              <HistoryPanel
-                activeView={activeView}
-                chatQuery={chatQuery}
-                chats={filteredChats}
-                onNewChat={handleNewChat}
-                onOpenKnowledgeBase={handleOpenKnowledgeBase}
-                onOpenSettings={handleOpenSettings}
-                onPrompt={handlePrompt}
-                onSearchChange={setChatQuery}
-                onSelectChat={handleSelectChat}
-                selectedChatId={selectedChatId}
-                searchRef={searchRef}
-              />
-            ) : null}
-            <ChatWorkspace
-              attachments={attachments}
-              activeView={activeView}
-              chat={selectedChat}
-              draft={draft}
-              mode={mode}
-              model={model}
-              onAttach={handleAttach}
-              onDraftChange={setDraft}
-              onModelChange={setModel}
-              onNewChat={handleNewChat}
-              onPrompt={handlePrompt}
-              onSend={handleSend}
-              onThemeChange={setTheme}
-              onToggleVoice={() => setVoiceEnabled((value) => !value)}
-              promptActions={promptActions}
-              textareaRef={draftRef}
-              themePreference={normalizeThemePreference(theme)}
-              voiceEnabled={voiceEnabled}
-            />
-          </CardContent>
-        </Card>
+      <div
+        className="animate-in duration-300 ease-out fade-in-0 zoom-in-95 slide-in-from-bottom-1"
+        key={activeSection}
+      >
+        {activeView === "dashboard" ? (
+          <DashboardView />
+        ) : (
+          <div className="px-2 pt-2 pb-2 sm:px-2.5 sm:pt-3">
+            <Card className="h-[calc(100svh-4.25rem)] rounded-lg py-0 shadow-none ring-border sm:h-[calc(100svh-4.75rem)]">
+              <CardContent
+                className={cn(
+                  "grid h-full min-h-0 p-0 transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none",
+                  desktopSidebarOpen
+                    ? "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"
+                    : "lg:grid-cols-1"
+                )}
+              >
+                {desktopSidebarOpen ? (
+                  <HistoryPanel
+                    activeView={activeView}
+                    chatQuery={chatQuery}
+                    chats={filteredChats}
+                    onNewChat={handleNewChat}
+                    onOpenKnowledgeBase={handleOpenKnowledgeBase}
+                    onOpenSettings={handleOpenSettings}
+                    onPrompt={handlePrompt}
+                    onSearchChange={setChatQuery}
+                    onSelectChat={handleSelectChat}
+                    selectedChatId={selectedChatId}
+                    searchRef={searchRef}
+                  />
+                ) : null}
+                <ChatWorkspace
+                  attachments={attachments}
+                  activeView={activeView}
+                  chat={selectedChat}
+                  draft={draft}
+                  mode={mode}
+                  model={model}
+                  onAttach={handleAttach}
+                  onDraftChange={setDraft}
+                  onModelChange={setModel}
+                  onNewChat={handleNewChat}
+                  onPrompt={handlePrompt}
+                  onSend={handleSend}
+                  onThemeChange={setTheme}
+                  onToggleVoice={() => setVoiceEnabled((value) => !value)}
+                  promptActions={promptActions}
+                  textareaRef={draftRef}
+                  themePreference={normalizeThemePreference(theme)}
+                  voiceEnabled={voiceEnabled}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
@@ -1021,15 +1284,21 @@ export function AiChatShell() {
 }
 
 function TopBar({
+  activeSection,
   notificationCount,
   onClearNotifications,
+  onOpenAI,
+  onOpenDashboard,
   onToggleSidebar,
   onToggleTheme,
   onOpenNotifications,
   theme,
 }: {
+  activeSection: "dashboard" | "ai"
   notificationCount: number
   onClearNotifications: () => void
+  onOpenAI: () => void
+  onOpenDashboard: () => void
   onToggleSidebar: () => void
   onToggleTheme: () => void
   onOpenNotifications: () => void
@@ -1042,23 +1311,31 @@ function TopBar({
   }, [])
 
   const ThemeIcon = mounted && theme === "dark" ? SunIcon : MoonIcon
+  const showSidebarToggle = activeSection === "ai"
 
   return (
     <header className="relative flex h-14 items-center border-b bg-background px-3 sm:h-16 sm:px-4">
-      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               aria-label="Alternar barra lateral"
+              className={cn(
+                "shrink-0 transition-[opacity,transform] duration-300 ease-out",
+                !showSidebarToggle &&
+                  "pointer-events-none -translate-x-1 opacity-0"
+              )}
               onClick={onToggleSidebar}
               size="icon-sm"
+              tabIndex={showSidebarToggle ? 0 : -1}
               variant="ghost"
-              className="shrink-0"
             >
               <PanelLeftIcon />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Alternar barra lateral</TooltipContent>
+          {showSidebarToggle ? (
+            <TooltipContent>Alternar barra lateral</TooltipContent>
+          ) : null}
         </Tooltip>
         <Image
           src="/logo-sin-fondo.png"
@@ -1066,7 +1343,12 @@ function TopBar({
           width={120}
           height={36}
           priority
-          className="h-7 w-auto object-contain sm:h-9"
+          className="h-7 w-auto max-w-[88px] object-contain sm:h-9 sm:max-w-none"
+        />
+        <TopNavMenu
+          activeSection={activeSection}
+          onOpenAI={onOpenAI}
+          onOpenDashboard={onOpenDashboard}
         />
       </div>
 
@@ -1082,6 +1364,45 @@ function TopBar({
         </Avatar>
       </div>
     </header>
+  )
+}
+
+function TopNavMenu({
+  activeSection,
+  onOpenAI,
+  onOpenDashboard,
+}: {
+  activeSection: "dashboard" | "ai"
+  onOpenAI: () => void
+  onOpenDashboard: () => void
+}) {
+  return (
+    <ToggleGroup
+      aria-label="Navegación principal"
+      className="rounded-lg border bg-muted/30 p-0.5"
+      onValueChange={(value) => {
+        if (value === "dashboard") {
+          onOpenDashboard()
+        }
+
+        if (value === "ai") {
+          onOpenAI()
+        }
+      }}
+      size="sm"
+      type="single"
+      value={activeSection}
+      variant="default"
+    >
+      <ToggleGroupItem value="dashboard">
+        <LayoutDashboardIcon data-icon="inline-start" />
+        Dashboard
+      </ToggleGroupItem>
+      <ToggleGroupItem value="ai">
+        <BrainCircuitIcon data-icon="inline-start" />
+        AI
+      </ToggleGroupItem>
+    </ToggleGroup>
   )
 }
 
@@ -1863,6 +2184,47 @@ function RenderedDocumentPreview({
             >
               <ZoomInIcon />
             </Button>
+            <Separator className="mx-1 h-6" orientation="vertical" />
+            <Dialog>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DialogTrigger asChild>
+                    <Button
+                      aria-label="Ampliar documento"
+                      size="icon-sm"
+                      variant="secondary"
+                    >
+                      <MaximizeIcon />
+                    </Button>
+                  </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Ampliar documento</TooltipContent>
+              </Tooltip>
+              <DialogContent className="flex h-[min(92vh,860px)] w-[min(92vw,1040px)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden bg-background/95 p-0 backdrop-blur-sm sm:max-w-[min(92vw,1040px)]">
+                <DialogHeader className="border-b p-4 sm:p-6">
+                  <DialogTitle>{source.name}</DialogTitle>
+                  <DialogDescription>
+                    {source.owner} - {source.type} - Actualizado:{" "}
+                    {source.updatedAt}
+                  </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="flex-1 bg-muted/10 p-4 sm:p-6">
+                  <div className="flex min-h-[680px] items-start justify-center">
+                    <div
+                      className="origin-top animate-in transition-transform duration-300 ease-out fade-in-0 zoom-in-95"
+                      style={{ transform: `scale(${(zoom + 35) / 100})` }}
+                    >
+                      <RenderedPreviewSurface
+                        display="expanded"
+                        page={page}
+                        pageIndex={pageIndex}
+                        source={source}
+                      />
+                    </div>
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
@@ -1887,16 +2249,20 @@ function RenderedDocumentPreview({
 }
 
 function RenderedPreviewSurface({
+  display = "preview",
   page,
   pageIndex,
   source,
 }: {
+  display?: "preview" | "expanded"
   page: KnowledgeRenderedPage
   pageIndex: number
   source: KnowledgeSource
 }) {
   if (source.type === "CSV") {
-    return <SpreadsheetPreviewPage page={page} source={source} />
+    return (
+      <SpreadsheetPreviewPage display={display} page={page} source={source} />
+    )
   }
 
   if (source.type === "URL") {
@@ -1942,14 +2308,23 @@ function RenderedPreviewSurface({
 }
 
 function SpreadsheetPreviewPage({
+  display = "preview",
   page,
   source,
 }: {
+  display?: "preview" | "expanded"
   page: KnowledgeRenderedPage
   source: KnowledgeSource
 }) {
+  const isExpanded = display === "expanded"
+
   return (
-    <article className="w-[280px] overflow-hidden rounded-md border bg-background shadow-sm sm:w-[360px]">
+    <article
+      className={cn(
+        "overflow-hidden rounded-md border bg-background shadow-sm",
+        isExpanded ? "w-[min(78vw,760px)]" : "w-[280px] sm:w-[360px]"
+      )}
+    >
       <div className="flex items-center justify-between gap-3 border-b bg-muted/30 p-3">
         <div className="min-w-0">
           <p className="truncate text-[10px] font-medium text-muted-foreground uppercase">
@@ -1969,7 +2344,7 @@ function SpreadsheetPreviewPage({
           </div>
         ))}
         {page.table ? (
-          <div className="overflow-hidden rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -2492,6 +2867,10 @@ function ChatWorkspace({
     onToggleVoice()
   }
 
+  if (activeView === "dashboard") {
+    return <DashboardView />
+  }
+
   if (activeView === "settings") {
     return (
       <ChatSettingsView
@@ -2696,6 +3075,479 @@ function ChatWorkspace({
         </div>
       </div>
     </section>
+  )
+}
+
+function DashboardView() {
+  return (
+    <section
+      aria-label="Dashboard operativo"
+      className="h-[calc(100svh-3.5rem)] overflow-hidden bg-background sm:h-[calc(100svh-4rem)]"
+    >
+      <ScrollArea className="h-full">
+        <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-4 sm:px-5 lg:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">
+                  <Building2Icon data-icon="inline-start" />
+                  Operación nacional
+                </Badge>
+                <Badge variant="outline">
+                  <CalendarClockIcon data-icon="inline-start" />
+                  Actualizado hace 4 min
+                </Badge>
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl leading-tight font-medium tracking-[0] sm:text-3xl">
+                  Dashboard operativo
+                </h1>
+                <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                  Vista ejecutiva de ocupación, despacho, capacidad y riesgo en
+                  la red de almacenes.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select defaultValue="today">
+                <SelectTrigger className="h-8 w-[160px]">
+                  <SelectValue placeholder="Periodo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="today">Hoy</SelectItem>
+                    <SelectItem value="week">Últimos 7 días</SelectItem>
+                    <SelectItem value="month">Mes actual</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline">
+                <FileTextIcon data-icon="inline-start" />
+                Exportar
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {dashboardMetricCards.map((metric) => (
+              <DashboardMetricCard key={metric.label} metric={metric} />
+            ))}
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)]">
+            <Card className="overflow-hidden py-0">
+              <Tabs className="gap-0" defaultValue="volumen">
+                <CardHeader className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <RouteIcon />
+                      Flujo operativo semanal
+                    </CardTitle>
+                    <CardDescription>
+                      Ingresos, salidas y presión de backlog por día.
+                    </CardDescription>
+                  </div>
+                  <TabsList>
+                    <TabsTrigger value="volumen">Volumen</TabsTrigger>
+                    <TabsTrigger value="sla">SLA</TabsTrigger>
+                  </TabsList>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <TabsContent className="mt-0" value="volumen">
+                    <ChartContainer
+                      className="aspect-auto h-[285px] w-full"
+                      config={dashboardFlowConfig}
+                    >
+                      <AreaChart
+                        accessibilityLayer
+                        data={dashboardFlowData}
+                        margin={{ left: 0, right: 12, top: 10 }}
+                      >
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          axisLine={false}
+                          dataKey="day"
+                          tickLine={false}
+                          tickMargin={8}
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tickMargin={8}
+                          width={38}
+                        />
+                        <ChartTooltip
+                          content={<ChartTooltipContent indicator="line" />}
+                        />
+                        <Area
+                          dataKey="ingreso"
+                          fill="var(--color-ingreso)"
+                          fillOpacity={0.16}
+                          stroke="var(--color-ingreso)"
+                          strokeWidth={2}
+                          type="natural"
+                        />
+                        <Area
+                          dataKey="salida"
+                          fill="var(--color-salida)"
+                          fillOpacity={0.1}
+                          stroke="var(--color-salida)"
+                          strokeWidth={2}
+                          type="natural"
+                        />
+                      </AreaChart>
+                    </ChartContainer>
+                  </TabsContent>
+                  <TabsContent className="mt-0" value="sla">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+                      <ChartContainer
+                        className="aspect-auto h-[285px] w-full"
+                        config={dashboardFlowConfig}
+                      >
+                        <AreaChart
+                          accessibilityLayer
+                          data={dashboardFlowData}
+                          margin={{ left: 0, right: 12, top: 10 }}
+                        >
+                          <CartesianGrid vertical={false} />
+                          <XAxis
+                            axisLine={false}
+                            dataKey="day"
+                            tickLine={false}
+                            tickMargin={8}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            domain={[90, 100]}
+                            tickLine={false}
+                            tickMargin={8}
+                            width={34}
+                          />
+                          <ChartTooltip
+                            content={<ChartTooltipContent indicator="line" />}
+                          />
+                          <Area
+                            dataKey="sla"
+                            fill="var(--color-sla)"
+                            fillOpacity={0.18}
+                            stroke="var(--color-sla)"
+                            strokeWidth={2}
+                            type="natural"
+                          />
+                        </AreaChart>
+                      </ChartContainer>
+                      <div className="flex flex-col justify-center gap-3 rounded-lg border bg-muted/20 p-4">
+                        <div>
+                          <p className="text-sm font-medium">Objetivo SLA</p>
+                          <p className="text-xs text-muted-foreground">
+                            Meta mensual contratada
+                          </p>
+                        </div>
+                        <div className="flex items-end gap-2">
+                          <span className="text-3xl font-medium">96.4%</span>
+                          <Badge variant="secondary">+1.8%</Badge>
+                        </div>
+                        <Progress value={96} />
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          El SLA se sostiene por encima de la meta, pero Ate
+                          concentra las excepciones del día.
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </CardContent>
+              </Tabs>
+            </Card>
+
+            <Card className="overflow-hidden py-0">
+              <CardHeader className="border-b p-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ShieldCheckIcon />
+                  Salud de red
+                </CardTitle>
+                <CardDescription>
+                  Sedes activas, ocupación y pedidos del día.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4 p-4">
+                {warehouseNetwork.map((site) => (
+                  <DashboardNetworkRow key={site.site} site={site} />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.05fr)]">
+            <Card className="overflow-hidden py-0">
+              <CardHeader className="border-b p-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <GaugeIcon />
+                  Capacidad por sede
+                </CardTitle>
+                <CardDescription>
+                  Ocupación de almacén y utilización de muelles.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4">
+                <ChartContainer
+                  className="aspect-auto h-[300px] w-full"
+                  config={warehouseCapacityConfig}
+                >
+                  <BarChart
+                    accessibilityLayer
+                    data={warehouseCapacityData}
+                    layout="vertical"
+                    margin={{ left: 10, right: 14, top: 8 }}
+                  >
+                    <CartesianGrid horizontal={false} />
+                    <XAxis
+                      axisLine={false}
+                      domain={[0, 100]}
+                      hide
+                      tickLine={false}
+                      type="number"
+                    />
+                    <YAxis
+                      axisLine={false}
+                      dataKey="site"
+                      tickLine={false}
+                      tickMargin={8}
+                      type="category"
+                      width={72}
+                    />
+                    <ChartTooltip
+                      content={<ChartTooltipContent indicator="line" />}
+                    />
+                    <Bar
+                      dataKey="ocupacion"
+                      fill="var(--color-ocupacion)"
+                      radius={5}
+                    />
+                    <Bar
+                      dataKey="muelles"
+                      fill="var(--color-muelles)"
+                      radius={5}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden py-0">
+              <CardHeader className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <AlertTriangleIcon />
+                    Riesgos priorizados
+                  </CardTitle>
+                  <CardDescription>
+                    Bloqueos operativos con dueño y ventana de decisión.
+                  </CardDescription>
+                </div>
+                <Badge variant="destructive">3 activos</Badge>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3 p-4">
+                {dashboardRisks.map((risk) => (
+                  <DashboardRiskItem key={risk.title} risk={risk} />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
+            <Card className="overflow-hidden py-0">
+              <CardHeader className="border-b p-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TruckIcon />
+                  Movimientos críticos
+                </CardTitle>
+                <CardDescription>
+                  Órdenes que impactan facturación, SLA o promesa comercial.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Orden</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Sede</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>ETA</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {criticalMovements.map((movement) => (
+                      <TableRow key={movement.order}>
+                        <TableCell className="font-medium">
+                          {movement.order}
+                        </TableCell>
+                        <TableCell>{movement.client}</TableCell>
+                        <TableCell>{movement.site}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              movement.status === "Observado"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {movement.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{movement.eta}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {movement.value}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden py-0">
+              <CardHeader className="border-b p-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ClockIcon />
+                  Forecast 48 h
+                </CardTitle>
+                <CardDescription>
+                  Carga esperada por ventana operativa.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3 p-4">
+                {forecastWindows.map((window) => (
+                  <DashboardForecastItem key={window.label} window={window} />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </ScrollArea>
+    </section>
+  )
+}
+
+function DashboardMetricCard({
+  metric,
+}: {
+  metric: (typeof dashboardMetricCards)[number]
+}) {
+  const TrendIcon =
+    metric.direction === "up" ? ArrowUpRightIcon : ArrowDownRightIcon
+
+  return (
+    <Card className="overflow-hidden transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm">
+      <CardContent className="flex flex-col gap-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/30">
+            <metric.icon />
+          </span>
+          <Badge variant={metric.direction === "up" ? "secondary" : "outline"}>
+            <TrendIcon data-icon="inline-start" />
+            {metric.trend}
+          </Badge>
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">{metric.label}</p>
+          <p className="mt-1 text-2xl font-medium tracking-[0]">
+            {metric.value}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {metric.detail}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashboardNetworkRow({
+  site,
+}: {
+  site: (typeof warehouseNetwork)[number]
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border bg-background p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{site.site}</p>
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPinIcon />
+            {site.region}
+          </p>
+        </div>
+        <Badge variant={site.state === "Normal" ? "secondary" : "outline"}>
+          {site.state}
+        </Badge>
+      </div>
+      <Progress value={site.occupancy} />
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        <div>
+          <p className="text-muted-foreground">Ocupación</p>
+          <p className="font-medium">{site.occupancy}%</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">SLA</p>
+          <p className="font-medium">{site.sla}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Pedidos</p>
+          <p className="font-medium">{site.orders}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DashboardRiskItem({
+  risk,
+}: {
+  risk: (typeof dashboardRisks)[number]
+}) {
+  return (
+    <div className="grid gap-3 rounded-lg border bg-background p-3 sm:grid-cols-[1fr_auto]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium">{risk.title}</p>
+          <Badge variant={risk.severity === "Alta" ? "destructive" : "outline"}>
+            {risk.severity}
+          </Badge>
+        </div>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {risk.detail}
+        </p>
+      </div>
+      <div className="flex min-w-28 flex-col gap-1 text-xs text-muted-foreground sm:text-right">
+        <span>{risk.owner}</span>
+        <span className="font-medium text-foreground">{risk.eta}</span>
+      </div>
+    </div>
+  )
+}
+
+function DashboardForecastItem({
+  window,
+}: {
+  window: (typeof forecastWindows)[number]
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border bg-background p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">{window.label}</p>
+          <p className="text-xs text-muted-foreground">{window.detail}</p>
+        </div>
+        <p className="text-lg font-medium">{window.value}</p>
+      </div>
+      <Progress value={window.load} />
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>Carga proyectada</span>
+        <span>{window.load}%</span>
+      </div>
+    </div>
   )
 }
 
