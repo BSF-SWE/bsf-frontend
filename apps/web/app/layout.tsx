@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "BSF Almacenes del Perú - AI Operativo",
+    default: "BSF Almacenes del Perú - IA operativa",
     template: "%s | BSF Almacenes",
   },
   description:
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     "Almacenes del Perú",
     "Logística",
     "Operaciones",
-    "AI",
+    "IA",
     "Gestión",
   ],
   authors: [{ name: "BSF Almacenes del Perú" }],
@@ -57,10 +57,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_PE",
-    title: "BSF Almacenes del Perú - AI Operativo",
+    title: "BSF Almacenes del Perú - IA operativa",
     description:
       "Plataforma operativa para gerencia de almacenes y logística en BSF Almacenes del Perú.",
-    siteName: "BSF AI Operativo",
+    siteName: "BSF IA operativa",
   },
   robots: {
     index: false,

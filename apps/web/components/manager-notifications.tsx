@@ -69,7 +69,7 @@ export const mockNotifications: Notification[] = [
   {
     id: "notif-4",
     type: "report",
-    title: "Inventario General (Excel)",
+    title: "Inventario general (hoja de cálculo)",
     description: "Reporte periódico de niveles de stock actualizados.",
     time: "Ayer",
     isRead: true,
@@ -209,11 +209,11 @@ export function ManagerNotifications({
               size="sm"
               onClick={onViewAll}
             >
-              Ver Todo
+              Ver todo
             </Button>
             <div className="flex items-center justify-center gap-1.5 pb-1 text-[10px] text-muted-foreground">
               <ServerIcon className="size-3" />
-              <span>Enviado vía SMTP Local (BSF Infra)</span>
+              <span>Enviado vía SMTP local (BSF Infra)</span>
             </div>
           </div>
         </div>

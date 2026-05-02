@@ -557,7 +557,7 @@ const dashboardFlowConfig = {
     color: "var(--chart-1)",
   },
   backlog: {
-    label: "Backlog",
+    label: "Pendientes",
     color: "var(--chart-4)",
   },
   sla: {
@@ -1037,7 +1037,7 @@ function makeMockReply(
   }
 
   if (mode === "Resumen") {
-    return `Resumen de ${model}: la solicitud es mantener la interacción funcional, reducir el peso visual de la barra lateral y conservar el layout del chat AI en desktop y móvil.${attachmentText}`
+    return `Resumen de ${model}: la solicitud es mantener la interacción funcional, reducir el peso visual de la barra lateral y conservar el layout del chat IA en escritorio y móvil.${attachmentText}`
   }
 
   return `Con ${model}, aquí tienes una respuesta práctica: comienza por la intención principal, mantén la respuesta concisa y convierte la siguiente acción en algo que la interfaz pueda ejecutar de inmediato.${attachmentText}`
@@ -1173,9 +1173,9 @@ export function AiChatShell() {
     setChats((current) => [
       {
         id: chatId,
-        title: "Análisis de dashboard",
+        title: "Análisis del panel",
         group: "Recientes",
-        category: "Dashboard",
+        category: "Panel",
         updatedAt: timestamp,
         model,
         messages: [
@@ -1526,11 +1526,11 @@ function TopNavMenu({
     >
       <ToggleGroupItem value="dashboard">
         <LayoutDashboardIcon data-icon="inline-start" />
-        Dashboard
+        Panel
       </ToggleGroupItem>
       <ToggleGroupItem value="ai">
         <BrainCircuitIcon data-icon="inline-start" />
-        AI
+        IA
       </ToggleGroupItem>
     </ToggleGroup>
   )
@@ -2646,7 +2646,7 @@ function ChatSettingsView({
       <div className="flex h-[3.25rem] shrink-0 items-center justify-between gap-3 border-b px-4 sm:h-14 sm:px-5">
         <div className="min-w-0">
           <h1 className="truncate text-sm font-medium sm:text-base">
-            Configuración del chat AI
+            Configuración del chat IA
           </h1>
           <p className="text-xs text-muted-foreground">
             Configura apariencia y personalización del asistente.
@@ -2675,7 +2675,7 @@ function ChatSettingsView({
                 <CardHeader>
                   <CardTitle>Tema</CardTitle>
                   <CardDescription>
-                    Elige cómo se ve el chat AI en tu espacio de trabajo.
+                    Elige cómo se ve el chat IA en tu espacio de trabajo.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -3030,7 +3030,7 @@ function ChatWorkspace({
           </div>
           <Button onClick={onNewChat} size="sm" variant="outline">
             <PlusIcon data-icon="inline-start" />
-            New
+            Nuevo
           </Button>
         </div>
         <ScrollArea
@@ -3163,11 +3163,11 @@ function ChatWorkspace({
           )}
         >
           <h1 className="mt-10 text-center text-[28px] leading-[1.2] font-medium tracking-[0] text-foreground sm:mt-12 sm:text-[34px] xl:text-[38px]">
-            <span>Good Morning, Toby</span>
+            <span>Buenos días, Toby</span>
             <br />
             <span>
-              How Can I{" "}
-              <span className="ai-gradient-text">Assist You Today?</span>
+              ¿Cómo puedo{" "}
+              <span className="ai-gradient-text">ayudarte hoy?</span>
             </span>
           </h1>
           <ChatComposer
@@ -3278,7 +3278,7 @@ function DashboardView({
 
   return (
     <section
-      aria-label="Dashboard operativo"
+      aria-label="Panel operativo"
       className="h-[calc(100svh-3.5rem)] overflow-hidden bg-background sm:h-[calc(100svh-4rem)]"
     >
       <ScrollArea className="h-full">
@@ -3297,7 +3297,7 @@ function DashboardView({
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl leading-tight font-medium tracking-[0] sm:text-3xl">
-                  Dashboard operativo
+                  Panel operativo
                 </h1>
                 <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
                   Vista ejecutiva de ocupación, despacho, capacidad y riesgo en
@@ -3714,7 +3714,7 @@ function DashboardView({
                 <CardHeader className="border-b p-4">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <ClockIcon />
-                    Forecast 48 h
+                    Pronóstico 48 h
                   </CardTitle>
                   <CardDescription>
                     Carga esperada por ventana operativa.
@@ -3819,7 +3819,7 @@ function DashboardAskAIButton({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          aria-label="Explicar con AI"
+          aria-label="Explicar con IA"
           className={cn(
             "h-6 gap-1 rounded-full px-2 text-[11px] opacity-0 transition-[opacity,transform] duration-300 ease-out group-hover/data:opacity-100 hover:scale-[1.03] focus-visible:opacity-100",
             className
@@ -3832,10 +3832,10 @@ function DashboardAskAIButton({
           variant="secondary"
         >
           <BrainCircuitIcon data-icon="inline-start" />
-          AI
+          IA
         </Button>
       </TooltipTrigger>
-      <TooltipContent>Explicar este dato con AI</TooltipContent>
+      <TooltipContent>Explicar este dato con IA</TooltipContent>
     </Tooltip>
   )
 }
@@ -4086,7 +4086,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     >
       {!isUser ? (
         <Avatar className="mt-0.5 size-7">
-          <AvatarFallback className="bg-muted text-[11px]">AI</AvatarFallback>
+          <AvatarFallback className="bg-muted text-[11px]">IA</AvatarFallback>
         </Avatar>
       ) : null}
       <div
@@ -4147,7 +4147,7 @@ function ChatComposer({
     >
       <InputGroupAddon align="block-start" className="h-8 px-4 py-0 sm:px-5">
         <InputGroupText className="min-w-0 gap-2 text-xs text-foreground">
-          <span className="truncate">Smart Reasoning for Business</span>
+          <span className="truncate">Razonamiento empresarial inteligente</span>
 
           {mode !== "General" ? (
             <Badge
@@ -4160,7 +4160,7 @@ function ChatComposer({
         </InputGroupText>
       </InputGroupAddon>
       <InputGroupTextarea
-        aria-label="Ask me anything"
+        aria-label="Pregúntame lo que necesites"
         className="min-h-[74px] px-4 pt-4 pb-0 text-[15px] transition-colors duration-200 ease-out sm:px-5"
         onChange={(event) => onDraftChange(event.target.value)}
         onKeyDown={(event) => {
@@ -4169,7 +4169,7 @@ function ChatComposer({
             onSend()
           }
         }}
-        placeholder="Ask me anything..."
+        placeholder="Pregúntame lo que necesites..."
         ref={textareaRef}
         value={draft}
       />
@@ -4178,7 +4178,7 @@ function ChatComposer({
         className="flex-wrap gap-2 px-4 pt-0 pb-4 sm:h-12 sm:flex-nowrap sm:px-5"
       >
         <InputGroupButton
-          aria-label="Attach file"
+          aria-label="Adjuntar archivo"
           onClick={onAttach}
           size="icon-sm"
           variant="ghost"
@@ -4187,7 +4187,7 @@ function ChatComposer({
         </InputGroupButton>
         {attachments ? (
           <Badge className="h-6 text-[10px]" variant="outline">
-            {attachments} file{attachments === 1 ? "" : "s"}
+            {attachments} archivo{attachments === 1 ? "" : "s"}
           </Badge>
         ) : null}
         <DropdownMenu>
@@ -4220,7 +4220,7 @@ function ChatComposer({
         </DropdownMenu>
         <InputGroupText className="ml-auto gap-2">
           <Button
-            aria-label="Voice input"
+            aria-label="Entrada de voz"
             className={cn(
               "rounded-full transition-[background-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-px",
               voiceEnabled && "bg-muted"
@@ -4232,7 +4232,7 @@ function ChatComposer({
             <MicIcon />
           </Button>
           <Button
-            aria-label="Send message"
+            aria-label="Enviar mensaje"
             className="ai-send-button rounded-full transition-[background-color,box-shadow,transform] duration-200 ease-out enabled:hover:-translate-y-px enabled:hover:shadow-sm"
             disabled={!draft.trim()}
             onClick={onSend}

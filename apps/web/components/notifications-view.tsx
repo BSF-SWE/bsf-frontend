@@ -72,7 +72,7 @@ export function NotificationsView({
       <div className="flex h-[3.25rem] shrink-0 items-center justify-between gap-3 border-b px-4 sm:h-14 sm:px-5">
         <div className="min-w-0">
           <h1 className="truncate text-sm font-medium sm:text-base">
-            Centro de Notificaciones
+            Centro de notificaciones
           </h1>
           <p className="text-xs text-muted-foreground">
             Gestión estructurada de alertas operativas y reportes automatizados.
@@ -114,7 +114,7 @@ export function NotificationsView({
                   </TabsTrigger>
                   <TabsTrigger value="unread" className="gap-2">
                     <AlertCircleIcon className="size-3.5" />
-                    No Leídas
+                    No leídas
                     {unreadCount > 0 && (
                       <Badge
                         variant="destructive"
@@ -149,7 +149,7 @@ export function NotificationsView({
                 <div className="flex items-center gap-2 rounded-lg border bg-background px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
                   <ServerIcon className="size-3.5" />
                   <span>
-                    Conexión SMTP Local:{" "}
+                    Conexión SMTP local:{" "}
                     <strong className="font-medium text-emerald-600">
                       Estable
                     </strong>
@@ -181,7 +181,7 @@ export function NotificationsView({
                       !notification.isRead && "bg-muted/10"
                     )}
                   >
-                    {/* Left Column: Icon & Read Indicator */}
+                    {/* Columna izquierda: icono e indicador de lectura */}
                     <div className="flex w-full shrink-0 items-start gap-3 sm:w-[220px]">
                       <div
                         className={cn(
@@ -206,7 +206,7 @@ export function NotificationsView({
                       </div>
                     </div>
 
-                    {/* Middle Column: Content */}
+                    {/* Columna central: contenido */}
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <div className="flex items-center gap-2">
                         {!notification.isRead && (
@@ -231,7 +231,7 @@ export function NotificationsView({
                       </p>
                     </div>
 
-                    {/* Right Column: Actions & Tags */}
+                    {/* Columna derecha: acciones y etiquetas */}
                     <div className="mt-2 flex shrink-0 flex-row items-center justify-between gap-3 sm:mt-0 sm:w-[140px] sm:flex-col sm:items-end sm:justify-center">
                       <Badge
                         variant="outline"
