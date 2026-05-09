@@ -48,7 +48,6 @@ import {
   SlidersHorizontalIcon,
   SunIcon,
   TrendingUpIcon,
-  TruckIcon,
   UploadIcon,
   WarehouseIcon,
   ZoomInIcon,
@@ -57,8 +56,6 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -87,6 +84,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -98,6 +96,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+  FieldLegend,
+} from "@workspace/ui/components/field"
+import { Input } from "@workspace/ui/components/input"
 import {
   InputGroup,
   InputGroupAddon,
@@ -148,6 +154,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import { ManagerNotifications } from "./manager-notifications"
 import { NotificationsView } from "./notifications-view"
@@ -235,6 +242,21 @@ type KnowledgeSource = {
   preview: string[]
   pages: KnowledgeRenderedPage[]
   recommendedUse: string
+}
+
+type KnowledgeUploadDraft = {
+  file: File | null
+  title: string
+  folderId: string
+  owner: string
+  description: string
+  intendedUse: string
+  tags: string
+}
+
+type KnowledgeFolderDraft = {
+  name: string
+  description: string
 }
 
 const defaultModel = "nvidia/llama-3.3-nemotron-super-49b-v1.5"
@@ -463,74 +485,133 @@ const defaultDashboardBlockOrder: DashboardBlockId[] = [
 
 const dashboardMetricCards = [
   {
-    label: "Ocupación promedio",
-    value: "87%",
-    detail: "14 sedes sobre meta operativa",
-    trend: "+4.2%",
+    label: "Ocupación comercial",
+    value: "78.4%",
+    detail: "Meta gerencial 82%; brecha concentrada en Logiscity",
+    trend: "-2.1 pp",
+    status: "attention",
     direction: "up",
     icon: WarehouseIcon,
   },
   {
-    label: "SLA de despacho",
-    value: "96.4%",
-    detail: "18,420 pedidos sin retraso",
-    trend: "+1.8%",
+    label: "M² disponibles",
+    value: "18,940",
+    detail: "14,200 m² vendibles ahora sin restricción operativa",
+    trend: "+6.8%",
+    status: "normal",
+    direction: "up",
+    icon: Building2Icon,
+  },
+  {
+    label: "M² arrendados",
+    value: "68,720",
+    detail: "Sobre 87,660 m² operativos que cuentan en ocupación",
+    trend: "+1.9%",
+    status: "normal",
     direction: "up",
     icon: PackageCheckIcon,
   },
   {
-    label: "Ingresos logísticos",
-    value: "S/ 2.84M",
-    detail: "Facturación estimada del mes",
-    trend: "+12.6%",
+    label: "Ingreso mensual contratado",
+    value: "S/ 2.74M",
+    detail: "Incluye USD 184K convertidos a tipo gerencial",
+    trend: "+4.4%",
+    status: "normal",
     direction: "up",
     icon: TrendingUpIcon,
   },
   {
-    label: "Incidencias críticas",
-    value: "7",
-    detail: "3 requieren decisión hoy",
-    trend: "-18%",
-    direction: "down",
+    label: "Contratos vigentes",
+    value: "46",
+    detail: "39 contratos y 7 adendas con última versión marcada",
+    trend: "+3",
+    status: "normal",
+    direction: "up",
+    icon: FileTextIcon,
+  },
+  {
+    label: "Vencen 30/60/90 días",
+    value: "5 / 9 / 14",
+    detail: "S/ 612K mensuales requieren plan de renovación",
+    trend: "+2 casos",
+    status: "attention",
+    direction: "up",
+    icon: CalendarClockIcon,
+  },
+  {
+    label: "Alertas críticas",
+    value: "6",
+    detail: "2 comerciales, 3 de data y 1 contractual",
+    trend: "+2",
+    status: "critical",
+    direction: "up",
     icon: AlertTriangleIcon,
+  },
+  {
+    label: "Riesgo ingresos por vencimiento",
+    value: "S/ 428K",
+    detail: "Clientes con alta renta y renovación no confirmada",
+    trend: "+S/ 76K",
+    status: "critical",
+    direction: "down",
+    icon: ShieldCheckIcon,
   },
 ] satisfies Array<{
   label: string
   value: string
   detail: string
   trend: string
+  status: "normal" | "attention" | "critical"
   direction: "up" | "down"
   icon: LucideIcon
 }>
 
 const dashboardDecisionItems = [
   {
-    title: "Descomprimir muelles de Ate",
-    what: "La ventana 14:00-17:00 supera la capacidad asignada y empuja backlog a despacho nocturno.",
-    impact: "S/ 214K en órdenes observadas y riesgo de -0.9 pp en SLA diario.",
-    owner: "Subgerencia Operaciones",
-    deadline: "Hoy 13:30",
+    title: "Renovar contrato de Andina Retail antes del comité",
+    what: "Vence en 26 días y concentra 8,400 m² en Villa El Salvador con renta mensual alta.",
+    impact: "S/ 318K mensuales expuestos; perderlo bajaría la ocupación de la sede a 81%.",
+    owner: "Gerencia Comercial",
+    deadline: "Viernes 12:00",
     action:
-      "Reasignar 2 muelles desde Lurín y adelantar recepción de Retail Norte.",
+      "Enviar propuesta de renovación con ajuste escalonado y reunión con finanzas del cliente.",
     urgency: "Alta",
   },
   {
-    title: "Conciliar inventario de alta rotación",
-    what: "El WMS no coincide con conteo físico en SKU críticos para Farma Andina.",
-    impact: "S/ 92K retenidos y riesgo de quiebre en 3 rutas de última milla.",
-    owner: "Control de inventario",
-    deadline: "Hoy 16:00",
+    title: "Activar comercialización de nave LUR-A12",
+    what: "Propiedad de 4,600 m² disponible en Portada de Lurín sin movimiento comercial hace 18 días.",
+    impact: "S/ 119K mensuales potenciales no capturados; afecta meta de m² vendibles del mes.",
+    owner: "Jefatura Comercial Sur",
+    deadline: "Hoy 17:00",
     action:
-      "Bloquear liberación parcial hasta cerrar diferencia y aprobar sustitutos.",
+      "Publicar ficha comercial, asignar ejecutivo y lanzar oferta a shortlist de 12 prospectos.",
     urgency: "Media",
   },
   {
-    title: "Blindar rutas norte",
-    what: "Transportistas reportan variación de ETA por ventanas de entrega comprimidas.",
-    impact: "18 entregas con penalidad potencial y S/ 48K expuestos.",
-    owner: "Jefatura Transporte",
-    deadline: "Mañana 09:00",
-    action: "Activar backup carrier y mover 6 entregas de baja prioridad.",
+    title: "Corregir contrato activo sin última versión",
+    what: "Adenda de Global Foods figura vigente, pero no existe contrato origen enlazado ni versión final marcada.",
+    impact: "S/ 86K mensuales con respaldo documental débil para auditoría y facturación.",
+    owner: "Legal + Administración Comercial",
+    deadline: "Mañana 10:00",
+    action: "Relacionar contrato origen, marcar última versión y validar garantías vigentes.",
+    urgency: "Alta",
+  },
+  {
+    title: "Recuperar ocupación objetivo en Logiscity",
+    what: "La sede opera en 62% por m² disponibles y registros agrupados con nombre antiguo.",
+    impact: "9,800 m² vendibles y S/ 255K mensuales potenciales quedan fuera de priorización.",
+    owner: "Gerencia de Operaciones + Data",
+    deadline: "72 h",
+    action: "Depurar maestro Logiscity, confirmar subestados y pasar inventario limpio a comercial.",
+    urgency: "Media",
+  },
+  {
+    title: "Clasificar propiedades no disponibles sin subestado",
+    what: "Siete propiedades figuran no disponibles sin indicar reparación, reserva, uso BSF o inactivo.",
+    impact: "3,240 m² podrían estar bloqueando venta o inflando capacidad operativa reportada.",
+    owner: "Operaciones de Sede",
+    deadline: "Hoy 18:00",
+    action: "Completar subestado y definir si cuenta para ocupación comercial.",
     urgency: "Media",
   },
 ] satisfies Array<{
@@ -540,156 +621,152 @@ const dashboardDecisionItems = [
   owner: string
   deadline: string
   action: string
-  urgency: "Alta" | "Media"
+  urgency: "Alta" | "Media" | "Baja"
 }>
 
-const dashboardFlowData = [
-  { day: "Lun", ingreso: 1280, salida: 1190, backlog: 82, sla: 95.2 },
-  { day: "Mar", ingreso: 1420, salida: 1360, backlog: 74, sla: 96.1 },
-  { day: "Mié", ingreso: 1515, salida: 1488, backlog: 61, sla: 96.8 },
-  { day: "Jue", ingreso: 1390, salida: 1452, backlog: 54, sla: 97.1 },
-  { day: "Vie", ingreso: 1660, salida: 1588, backlog: 69, sla: 96.4 },
-  { day: "Sáb", ingreso: 1184, salida: 1098, backlog: 72, sla: 95.9 },
-]
-
-const dashboardFlowConfig = {
-  ingreso: {
-    label: "Ingresos",
-    color: "var(--chart-2)",
-  },
-  salida: {
-    label: "Salidas",
-    color: "var(--chart-1)",
-  },
-  backlog: {
-    label: "Pendientes",
-    color: "var(--chart-4)",
-  },
-  sla: {
-    label: "SLA",
-    color: "var(--chart-3)",
-  },
-} satisfies ChartConfig
-
-const warehouseCapacityData = [
-  { site: "Callao", ocupacion: 92, muelles: 84 },
-  { site: "Lurín", ocupacion: 88, muelles: 77 },
-  { site: "Ate", ocupacion: 83, muelles: 71 },
-  { site: "Arequipa", ocupacion: 79, muelles: 69 },
-  { site: "Trujillo", ocupacion: 74, muelles: 62 },
-]
-
-const warehouseCapacityConfig = {
-  ocupacion: {
-    label: "Ocupación",
-    color: "var(--chart-1)",
-  },
-  muelles: {
-    label: "Muelles",
-    color: "var(--chart-3)",
-  },
-} satisfies ChartConfig
-
-const warehouseNetwork = [
+const logisticsCenterOccupancy = [
   {
-    site: "Callao",
-    region: "Lima",
-    occupancy: 92,
-    sla: "97.8%",
-    orders: "6,248",
+    site: "Villa El Salvador",
+    totalSqm: "42,500",
+    occupiedSqm: "35,740",
+    availableSqm: "6,760",
+    occupancy: 84,
+    contracts: 21,
+    monthlyRevenue: "S/ 1.38M",
     state: "Normal",
   },
   {
-    site: "Lurín",
-    region: "Lima Sur",
-    occupancy: 88,
-    sla: "96.9%",
-    orders: "4,906",
-    state: "Normal",
-  },
-  {
-    site: "Ate",
-    region: "Lima Este",
-    occupancy: 83,
-    sla: "94.7%",
-    orders: "3,184",
+    site: "Portada de Lurín",
+    totalSqm: "31,900",
+    occupiedSqm: "24,380",
+    availableSqm: "7,520",
+    occupancy: 76,
+    contracts: 17,
+    monthlyRevenue: "S/ 932K",
     state: "Atención",
   },
   {
-    site: "Arequipa",
-    region: "Sur",
-    occupancy: 79,
-    sla: "96.1%",
-    orders: "2,102",
-    state: "Normal",
+    site: "Logiscity",
+    totalSqm: "13,260",
+    occupiedSqm: "8,600",
+    availableSqm: "4,660",
+    occupancy: 62,
+    contracts: 8,
+    monthlyRevenue: "S/ 428K",
+    state: "Crítico",
   },
 ]
 
-const dashboardRisks = [
+const contractPipeline = [
+  { state: "Borrador", count: 6, value: "S/ 184K", progress: 18 },
+  { state: "Aprobación interna", count: 4, value: "S/ 226K", progress: 28 },
+  { state: "Firmas cliente", count: 5, value: "S/ 310K", progress: 42 },
+  { state: "Firmas BSF", count: 3, value: "S/ 146K", progress: 35 },
+  { state: "Vigente", count: 46, value: "S/ 2.74M", progress: 88 },
+  { state: "No vigente", count: 8, value: "S/ 0", progress: 10 },
+  { state: "Cancelado", count: 2, value: "S/ 0", progress: 4 },
+]
+
+const expiringContracts = [
   {
-    title: "Congestión en muelles de Ate",
-    detail: "Ventana de recepción 14:00-17:00 supera la capacidad asignada.",
-    owner: "Operaciones",
-    severity: "Alta",
-    eta: "Hoy",
+    client: "Andina Retail",
+    site: "Villa El Salvador",
+    endDate: "04 Jun 2026",
+    sqm: "8,400",
+    revenue: "S/ 318K",
+    autoRenewal: "No",
+    risk: "Alto",
+    owner: "M. Salazar",
   },
   {
-    title: "Inventario pendiente de conciliación",
-    detail: "SKU de alta rotación con diferencia entre WMS y conteo físico.",
-    owner: "Control",
-    severity: "Media",
-    eta: "Mañana",
+    client: "Global Foods",
+    site: "Portada de Lurín",
+    endDate: "18 Jun 2026",
+    sqm: "3,200",
+    revenue: "USD 42K",
+    autoRenewal: "Sí",
+    risk: "Medio",
+    owner: "R. Vargas",
   },
   {
-    title: "Rutas norte con variación de ETA",
-    detail:
-      "Transportistas reportan demora por ventanas de entrega comprimidas.",
-    owner: "Transporte",
-    severity: "Media",
-    eta: "48 h",
+    client: "Textiles Pacífico",
+    site: "Logiscity",
+    endDate: "29 Jun 2026",
+    sqm: "2,100",
+    revenue: "S/ 64K",
+    autoRenewal: "No",
+    risk: "Alto",
+    owner: "C. Rivas",
+  },
+  {
+    client: "Farmalog Perú",
+    site: "Villa El Salvador",
+    endDate: "12 Jul 2026",
+    sqm: "1,850",
+    revenue: "S/ 58K",
+    autoRenewal: "Sí",
+    risk: "Bajo",
+    owner: "L. Medina",
   },
 ]
 
-const criticalMovements = [
-  {
-    order: "BSF-48192",
-    client: "Retail Norte",
-    site: "Callao",
-    status: "En despacho",
-    eta: "13:40",
-    value: "S/ 184K",
-  },
-  {
-    order: "BSF-48175",
-    client: "Agroexport Sur",
-    site: "Arequipa",
-    status: "Recepción",
-    eta: "15:10",
-    value: "S/ 126K",
-  },
-  {
-    order: "BSF-48166",
-    client: "Farma Andina",
-    site: "Lurín",
-    status: "Picking",
-    eta: "16:25",
-    value: "S/ 92K",
-  },
-  {
-    order: "BSF-48141",
-    client: "Consumo Masivo",
-    site: "Ate",
-    status: "Observado",
-    eta: "18:00",
-    value: "S/ 214K",
-  },
+const monthlyRevenueByCenter = [
+  { center: "Villa El Salvador", pen: 1380, usd: 58, revenuePerSqm: "S/ 38.6" },
+  { center: "Portada de Lurín", pen: 932, usd: 42, revenuePerSqm: "S/ 38.2" },
+  { center: "Logiscity", pen: 428, usd: 84, revenuePerSqm: "S/ 49.8" },
 ]
 
-const forecastWindows = [
-  { label: "0-12 h", value: "4,820", detail: "pedidos", load: 72 },
-  { label: "12-24 h", value: "6,140", detail: "pedidos", load: 84 },
-  { label: "24-36 h", value: "5,390", detail: "pedidos", load: 76 },
-  { label: "36-48 h", value: "4,210", detail: "pedidos", load: 61 },
+const revenueChartConfig = {
+  pen: {
+    label: "PEN (miles)",
+    color: "var(--chart-1)",
+  },
+  usd: {
+    label: "USD (miles)",
+    color: "var(--chart-3)",
+  },
+} satisfies ChartConfig
+
+const topClientsByRevenue = [
+  { client: "Andina Retail", revenue: "S/ 318K", sqm: "8,400", center: "Villa El Salvador" },
+  { client: "Global Foods", revenue: "USD 42K", sqm: "3,200", center: "Portada de Lurín" },
+  { client: "Farmalog Perú", revenue: "S/ 158K", sqm: "4,100", center: "Villa El Salvador" },
+  { client: "Textiles Pacífico", revenue: "S/ 64K", sqm: "2,100", center: "Logiscity" },
+  { client: "Consumo Norte", revenue: "S/ 52K", sqm: "1,740", center: "Portada de Lurín" },
+]
+
+const profitabilitySignals = [
+  { label: "Descuentos vigentes", value: "S/ 74K", detail: "2.7% de renta mensual", status: "Atención" },
+  { label: "Garantías por vencer", value: "8", detail: "S/ 412K por renovar", status: "Crítico" },
+  { label: "Distribución PEN/USD", value: "76% / 24%", detail: "USD concentrado en Logiscity", status: "Normal" },
+]
+
+const propertyInventorySummary = [
+  { label: "Disponible", count: 18, sqm: "18,940" },
+  { label: "Arrendado", count: 46, sqm: "68,720" },
+  { label: "Reservado", count: 5, sqm: "4,180" },
+  { label: "Reparación", count: 4, sqm: "2,240" },
+  { label: "Uso BSF", count: 6, sqm: "3,760" },
+  { label: "Inactivo", count: 3, sqm: "1,120" },
+  { label: "Dividido/subdividido", count: 9, sqm: "7,890" },
+]
+
+const propertyAvailabilityRows = [
+  { code: "VES-N03", name: "Nave Norte 03", site: "Villa El Salvador", type: "Almacén", sqm: "2,850", state: "Disponible", substate: "Lista comercial", available: "Sí" },
+  { code: "LUR-A12", name: "Módulo A12", site: "Portada de Lurín", type: "Nave", sqm: "4,600", state: "Disponible", substate: "Sin movimiento", available: "Sí" },
+  { code: "LOG-B07", name: "Bodega 7", site: "Logiscity", type: "Bodega", sqm: "1,920", state: "No disponible", substate: "Sin subestado", available: "No" },
+  { code: "VES-P02", name: "Patio 02", site: "Villa El Salvador", type: "Patio", sqm: "1,240", state: "Uso BSF", substate: "Operación interna", available: "No" },
+  { code: "LUR-C04", name: "Cámara C04", site: "Portada de Lurín", type: "Frío", sqm: "980", state: "Reparación", substate: "Mantenimiento", available: "No" },
+]
+
+const dataQualityAlerts = [
+  { issue: "Propiedades sin m²", count: 4, impact: "Ocupación y tarifa por m² incompletas", owner: "Data Master", severity: "Crítico" },
+  { issue: "Propiedades sin centro logístico", count: 3, impact: "No aparecen en ranking por sede", owner: "Operaciones", severity: "Alta" },
+  { issue: "Propiedades no disponibles sin subestado", count: 7, impact: "Puede esconder m² comercializables", owner: "Jefes de sede", severity: "Alta" },
+  { issue: "Contratos vigentes sin fecha de fin", count: 2, impact: "Riesgo de vencimiento no calculable", owner: "Legal", severity: "Crítico" },
+  { issue: "Adendas sin contrato origen", count: 3, impact: "Trazabilidad contractual incompleta", owner: "Legal", severity: "Alta" },
+  { issue: "Contratos sin última versión marcada", count: 5, impact: "Facturación puede usar versión antigua", owner: "Administración Comercial", severity: "Alta" },
+  { issue: "Logiscity agrupado por nombre antiguo", count: 11, impact: "Distorsiona ocupación y revenue por centro", owner: "Data Master", severity: "Crítico" },
 ]
 
 const knowledgeFolders: KnowledgeFolder[] = [
@@ -714,6 +791,21 @@ const knowledgeFolders: KnowledgeFolder[] = [
     description: "Competidores, precios y posicionamiento.",
   },
 ]
+
+const defaultKnowledgeUploadDraft: KnowledgeUploadDraft = {
+  file: null,
+  title: "",
+  folderId: "product",
+  owner: "Operaciones",
+  description: "",
+  intendedUse: "",
+  tags: "",
+}
+
+const defaultKnowledgeFolderDraft: KnowledgeFolderDraft = {
+  name: "",
+  description: "",
+}
 
 const initialKnowledgeSources: KnowledgeSource[] = [
   {
@@ -999,6 +1091,51 @@ const initialKnowledgeSources: KnowledgeSource[] = [
 
 function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+}
+
+function formatFileSize(size: number) {
+  if (!Number.isFinite(size) || size <= 0) {
+    return "0 KB"
+  }
+
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))} KB`
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function getKnowledgeFileType(fileName: string): KnowledgeSource["type"] {
+  const extension = fileName.split(".").pop()?.toLowerCase()
+
+  if (extension === "pdf") {
+    return "PDF"
+  }
+
+  if (extension === "csv" || extension === "xlsx" || extension === "xls") {
+    return "CSV"
+  }
+
+  return "Doc"
+}
+
+function parseKnowledgeTags(tags: string) {
+  return tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 6)
+}
+
+function makeFolderId(name: string) {
+  const slug = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+
+  return slug ? `folder-${slug}` : makeId("folder")
 }
 
 function makeTime() {
@@ -1868,6 +2005,9 @@ function KnowledgeBaseView() {
   const [sources, setSources] = React.useState<KnowledgeSource[]>(
     initialKnowledgeSources
   )
+  const [folders, setFolders] = React.useState<KnowledgeFolder[]>(
+    knowledgeFolders
+  )
   const [selectedFolderId, setSelectedFolderId] = React.useState("all")
   const [query, setQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
@@ -1876,6 +2016,14 @@ function KnowledgeBaseView() {
   )
   const [previewPageIndex, setPreviewPageIndex] = React.useState(0)
   const [previewZoom, setPreviewZoom] = React.useState(100)
+  const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false)
+  const [uploadDraft, setUploadDraft] = React.useState<KnowledgeUploadDraft>(
+    defaultKnowledgeUploadDraft
+  )
+  const [folderDialogOpen, setFolderDialogOpen] = React.useState(false)
+  const [folderDraft, setFolderDraft] = React.useState<KnowledgeFolderDraft>(
+    defaultKnowledgeFolderDraft
+  )
 
   const scopedSources = React.useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -1913,61 +2061,132 @@ function KnowledgeBaseView() {
   ).length
   const latestSource = sources[0]?.updatedAt ?? "-"
 
+  function getVisibleFolderName(folderId: string) {
+    return folders.find((folder) => folder.id === folderId)?.name ?? folderId
+  }
+
   React.useEffect(() => {
     setPreviewPageIndex(0)
     setPreviewZoom(100)
   }, [selectedSourceId])
 
-  function handleAddSource() {
+  function handleUploadDialogOpenChange(open: boolean) {
+    setUploadDialogOpen(open)
+
+    if (!open) {
+      setUploadDraft(defaultKnowledgeUploadDraft)
+    }
+  }
+
+  function updateUploadDraft<T extends keyof KnowledgeUploadDraft>(
+    field: T,
+    value: KnowledgeUploadDraft[T]
+  ) {
+    setUploadDraft((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  function handleFolderDialogOpenChange(open: boolean) {
+    setFolderDialogOpen(open)
+
+    if (!open) {
+      setFolderDraft(defaultKnowledgeFolderDraft)
+    }
+  }
+
+  function handleCreateFolder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const name = folderDraft.name.trim()
+
+    if (!name) {
+      return
+    }
+
+    const baseId = makeFolderId(name)
+    const exists = folders.some((folder) => folder.id === baseId)
+    const folder: KnowledgeFolder = {
+      id: exists ? makeId(baseId) : baseId,
+      name,
+      description:
+        folderDraft.description.trim() || "Recursos agrupados por el equipo.",
+    }
+
+    setFolders((current) => [...current, folder])
+    setSelectedFolderId(folder.id)
+    setFolderDialogOpen(false)
+    setFolderDraft(defaultKnowledgeFolderDraft)
+  }
+
+  function handleAddSource(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!uploadDraft.file) {
+      return
+    }
+
+    const fileName = uploadDraft.file.name
+    const title = uploadDraft.title.trim() || fileName
+    const tags = parseKnowledgeTags(uploadDraft.tags)
+    const description =
+      uploadDraft.description.trim() ||
+      "Recurso cargado para enriquecer la base de conocimiento operativa."
+    const intendedUse =
+      uploadDraft.intendedUse.trim() ||
+      "Responder consultas internas con contexto confiable del archivo cargado."
     const source: KnowledgeSource = {
       id: makeId("source"),
-      name: "Nueva importación de feedback de clientes.pdf",
-      folderId: "product",
-      type: "PDF",
-      owner: "Investigación",
+      name: title,
+      folderId: uploadDraft.folderId,
+      type: getKnowledgeFileType(fileName),
+      owner: uploadDraft.owner.trim() || "Operaciones",
       status: "Indexing",
       updatedAt: "Ahora mismo",
-      size: "2.1 MB",
+      size: formatFileSize(uploadDraft.file.size),
       chunks: 0,
-      coverage: 24,
-      tags: ["feedback", "importación"],
-      summary:
-        "Paquete de feedback de clientes recién cargado. Aún está procesándose antes de que el equipo pueda usarlo con confianza.",
+      coverage: 32,
+      tags: tags.length ? tags : ["importación", "contexto"],
+      summary: description,
       preview: [
-        "La carga inicial detectó comentarios de clientes, notas de cuentas y solicitudes de producto etiquetadas.",
-        "El archivo aún se está preparando, por lo que los managers deben esperar antes de usarlo para decisiones.",
-        "Recomendación: actualizar después del procesamiento y aprobar cuando el responsable confirme el resumen.",
+        description,
+        `Preguntas o decisiones que debe apoyar: ${intendedUse}`,
+        `Conceptos clave: ${(tags.length ? tags : ["importación", "contexto"]).join(", ")}`,
       ],
       pages: [
         {
-          title: "Nueva importación de feedback de clientes",
-          eyebrow: "Vista previa de carga - página 1",
+          title,
+          eyebrow: "Vista previa de carga - metadata inicial",
           sections: [
             {
-              heading: "Contenido detectado",
-              body: "La carga inicial detectó comentarios de clientes, notas de cuentas y solicitudes de producto etiquetadas.",
+              heading: "Descripción del recurso",
+              body: description,
             },
             {
-              heading: "Estado actual",
-              body: "El archivo aún se está preparando, por lo que los managers deben esperar antes de usarlo para decisiones.",
+              heading: "Preguntas que debería responder",
+              body: intendedUse,
             },
             {
-              heading: "Siguiente paso",
-              body: "Actualizar después del procesamiento y aprobar cuando el responsable confirme el resumen y su uso previsto.",
+              heading: "Conceptos clave",
+              body: (tags.length ? tags : ["importación", "contexto"]).join(
+                ", "
+              ),
             },
           ],
           callout:
-            "Esta es una carga de prueba. La vista renderizada estará disponible de inmediato en esta demo local.",
+            "Carga local de demo. Este contexto ayuda al asistente a recuperar mejor la información cuando el recurso sea consultado.",
         },
       ],
-      recommendedUse:
-        "Úsalo después de la revisión para planificación de feedback de clientes y detección de oportunidades.",
+      recommendedUse: intendedUse,
     }
 
     setSources((current) => [source, ...current])
     setSelectedFolderId("all")
     setStatusFilter("all")
     setSelectedSourceId(source.id)
+    setUploadDialogOpen(false)
+    setUploadDraft(defaultKnowledgeUploadDraft)
   }
 
   function handleReindex(sourceId: string) {
@@ -2014,10 +2233,193 @@ function KnowledgeBaseView() {
             Recursos del equipo cargados para managers y contexto del asistente
           </p>
         </div>
-        <Button onClick={handleAddSource} size="sm">
-          <UploadIcon data-icon="inline-start" />
-          Subir recurso
-        </Button>
+        <Dialog
+          onOpenChange={handleUploadDialogOpenChange}
+          open={uploadDialogOpen}
+        >
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <UploadIcon data-icon="inline-start" />
+              Subir recurso
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[calc(100vh-2rem)] max-w-[760px] overflow-hidden rounded-2xl p-0 shadow-2xl sm:max-w-[760px]">
+            <form
+              className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col"
+              onSubmit={handleAddSource}
+            >
+              <DialogHeader className="shrink-0 border-b bg-muted/30 px-6 py-4">
+                <div className="flex items-start gap-3 pr-8">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background shadow-sm">
+                    <UploadIcon />
+                  </span>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <DialogTitle>Subir recurso</DialogTitle>
+                    <DialogDescription>
+                      Agregá el archivo y el contexto clave para encontrarlo
+                      rápido.
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <ScrollArea className="min-h-0 flex-1">
+                <div className="flex flex-col gap-3 px-6 py-3">
+                  <FieldSet>
+                    <FieldLegend>Archivo y datos básicos</FieldLegend>
+                    <FieldGroup>
+                      <Field>
+                        <FieldLabel htmlFor="knowledge-upload-file">
+                          Archivo
+                        </FieldLabel>
+                        <Input
+                          accept=".pdf,.doc,.docx,.csv,.xlsx,.xls,.txt,.md"
+                          id="knowledge-upload-file"
+                          onChange={(event) =>
+                            updateUploadDraft(
+                              "file",
+                              event.target.files?.[0] ?? null
+                            )
+                          }
+                          type="file"
+                        />
+                      </Field>
+
+                      <Field>
+                        <FieldLabel htmlFor="knowledge-upload-title">
+                          Título visible
+                        </FieldLabel>
+                        <Input
+                          id="knowledge-upload-title"
+                          onChange={(event) =>
+                            updateUploadDraft("title", event.target.value)
+                          }
+                          placeholder="Ej. Manual de procedimientos Lurín Sur"
+                          value={uploadDraft.title}
+                        />
+                      </Field>
+
+                      <FieldGroup className="grid gap-4 sm:grid-cols-2">
+                        <Field>
+                          <FieldLabel>Área</FieldLabel>
+                          <Select
+                            onValueChange={(value) =>
+                              updateUploadDraft("folderId", value)
+                            }
+                            value={uploadDraft.folderId}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccioná un área" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {folders
+                                  .filter((folder) => folder.id !== "all")
+                                  .map((folder) => (
+                                    <SelectItem
+                                      key={folder.id}
+                                      value={folder.id}
+                                    >
+                                      {folder.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+
+                        <Field>
+                          <FieldLabel htmlFor="knowledge-upload-owner">
+                            Responsable
+                          </FieldLabel>
+                          <Input
+                            id="knowledge-upload-owner"
+                            onChange={(event) =>
+                              updateUploadDraft("owner", event.target.value)
+                            }
+                            placeholder="Operaciones, Legal, Comercial..."
+                            value={uploadDraft.owner}
+                          />
+                        </Field>
+                      </FieldGroup>
+
+                      <Field>
+                        <FieldLabel htmlFor="knowledge-upload-description">
+                          ¿Qué contiene este recurso?
+                        </FieldLabel>
+                        <Textarea
+                          className="min-h-16 resize-none"
+                          id="knowledge-upload-description"
+                          onChange={(event) =>
+                            updateUploadDraft(
+                              "description",
+                              event.target.value
+                            )
+                          }
+                          placeholder="Ej. Procedimientos de despacho, responsables por sede, excepciones y criterios para escalar incidencias."
+                          value={uploadDraft.description}
+                        />
+                      </Field>
+                    </FieldGroup>
+                  </FieldSet>
+
+                  <Separator />
+
+                  <FieldSet>
+                    <FieldLegend>Contexto para el asistente</FieldLegend>
+                    <FieldGroup>
+                      <Field>
+                        <FieldLabel htmlFor="knowledge-upload-intended-use">
+                          ¿Qué debería poder responder?
+                        </FieldLabel>
+                        <Textarea
+                          className="min-h-16 resize-none"
+                          id="knowledge-upload-intended-use"
+                          onChange={(event) =>
+                            updateUploadDraft(
+                              "intendedUse",
+                              event.target.value
+                            )
+                          }
+                          placeholder="Ej. Quién aprueba una excepción, qué sede aplica, cuáles son los pasos del proceso y cuándo escalar."
+                          value={uploadDraft.intendedUse}
+                        />
+                      </Field>
+
+                      <Field>
+                        <FieldLabel htmlFor="knowledge-upload-tags">
+                          Palabras clave
+                        </FieldLabel>
+                        <Input
+                          id="knowledge-upload-tags"
+                          onChange={(event) =>
+                            updateUploadDraft("tags", event.target.value)
+                          }
+                          placeholder="despacho, Lurín, SLA, inventario"
+                          value={uploadDraft.tags}
+                        />
+                      </Field>
+                    </FieldGroup>
+                  </FieldSet>
+                </div>
+              </ScrollArea>
+
+              <DialogFooter className="mx-0 mb-0 shrink-0 rounded-b-2xl px-6 py-3">
+                <Button
+                  onClick={() => handleUploadDialogOpenChange(false)}
+                  type="button"
+                  variant="outline"
+                >
+                  Cancelar
+                </Button>
+                <Button disabled={!uploadDraft.file} type="submit">
+                  <UploadIcon data-icon="inline-start" />
+                  Crear recurso
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -2044,12 +2446,82 @@ function KnowledgeBaseView() {
             <div className="flex min-h-0 flex-col gap-3 rounded-xl border bg-muted/20 p-3">
               <div className="flex items-center justify-between px-1">
                 <h2 className="text-sm font-medium">Áreas</h2>
-                <Badge className="h-5 text-[10px]" variant="outline">
-                  Compartido
-                </Badge>
+                <Dialog
+                  onOpenChange={handleFolderDialogOpenChange}
+                  open={folderDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      aria-label="Crear carpeta"
+                      className="rounded-full"
+                      size="icon-sm"
+                      variant="outline"
+                    >
+                      <PlusIcon />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="rounded-2xl sm:max-w-[420px]">
+                    <form className="flex flex-col gap-4" onSubmit={handleCreateFolder}>
+                      <DialogHeader>
+                        <DialogTitle>Nueva carpeta</DialogTitle>
+                        <DialogDescription>
+                          Creá un espacio para ordenar recursos por equipo,
+                          sede o proceso.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <FieldGroup>
+                        <Field>
+                          <FieldLabel htmlFor="knowledge-folder-name">
+                            Nombre
+                          </FieldLabel>
+                          <Input
+                            id="knowledge-folder-name"
+                            onChange={(event) =>
+                              setFolderDraft((current) => ({
+                                ...current,
+                                name: event.target.value,
+                              }))
+                            }
+                            placeholder="Ej. Operaciones Lurín"
+                            value={folderDraft.name}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="knowledge-folder-description">
+                            Descripción breve
+                          </FieldLabel>
+                          <Input
+                            id="knowledge-folder-description"
+                            onChange={(event) =>
+                              setFolderDraft((current) => ({
+                                ...current,
+                                description: event.target.value,
+                              }))
+                            }
+                            placeholder="Ej. Procedimientos y recursos de sede"
+                            value={folderDraft.description}
+                          />
+                        </Field>
+                      </FieldGroup>
+                      <DialogFooter className="mx-0 mb-0 px-0 pb-0">
+                        <Button
+                          onClick={() => handleFolderDialogOpenChange(false)}
+                          type="button"
+                          variant="outline"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button disabled={!folderDraft.name.trim()} type="submit">
+                          <PlusIcon data-icon="inline-start" />
+                          Crear carpeta
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
               <div className="flex flex-col gap-1.5">
-                {knowledgeFolders.map((folder) => {
+                {folders.map((folder) => {
                   const count =
                     folder.id === "all"
                       ? sources.length
@@ -2169,7 +2641,7 @@ function KnowledgeBaseView() {
                           </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {getFolderName(source.folderId)}
+                          {getVisibleFolderName(source.folderId)}
                         </TableCell>
                         <TableCell>
                           <KnowledgeStatusBadge status={source.status} />
@@ -2280,7 +2752,7 @@ function KnowledgeBaseView() {
                   ) : null}
                   <div className="grid gap-3 text-sm">
                     <KnowledgeDetail label="Área">
-                      {getFolderName(selectedSource.folderId)}
+                      {getVisibleFolderName(selectedSource.folderId)}
                     </KnowledgeDetail>
                     <KnowledgeDetail label="Archivo">
                       {selectedSource.type} - {selectedSource.size}
@@ -2701,13 +3173,6 @@ function KnowledgeStatusBadge({ status }: { status: KnowledgeStatus }) {
   }
 
   return <Badge variant="destructive">Requiere revisión</Badge>
-}
-
-function getFolderName(folderId: string) {
-  return (
-    knowledgeFolders.find((folder) => folder.id === folderId)?.name ??
-    "Sin asignar"
-  )
 }
 
 function KnowledgeDetail({
@@ -3394,37 +3859,90 @@ function DashboardView({
       <ScrollArea className="h-full">
         <div className="relative mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-4 sm:px-5 lg:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex min-w-0 flex-col gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">
-                  <Building2Icon data-icon="inline-start" />
-                  Operación nacional
-                </Badge>
-                <Badge variant="outline">
-                  <CalendarClockIcon data-icon="inline-start" />
-                  Actualizado hace 4 min
-                </Badge>
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-2xl leading-tight font-medium tracking-[0] sm:text-3xl">
-                  Panel operativo
-                </h1>
-                <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                  Vista ejecutiva de ocupación, despacho, capacidad y riesgo en
-                  la red de almacenes.
-                </p>
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">
+                    <Building2Icon data-icon="inline-start" />
+                    BSF Almacenes del Perú
+                  </Badge>
+                  <Badge variant="outline">
+                    <CalendarClockIcon data-icon="inline-start" />
+                    Actualizado hace 4 min
+                  </Badge>
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-2xl leading-tight font-medium tracking-[0] sm:text-3xl">
+                    Panel ejecutivo operacional-comercial
+                  </h1>
+                  <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                    Ocupación por sede, m² vendibles, ingresos asegurados,
+                    contratos en riesgo y calidad de datos para decidir sin ruido.
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Select defaultValue="today">
-                <SelectTrigger className="h-8 w-[160px]">
-                  <SelectValue placeholder="Periodo" />
+            <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+              <Select defaultValue="may-2026">
+                <SelectTrigger className="h-8 w-[150px]">
+                  <SelectValue placeholder="Fecha" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="today">Hoy</SelectItem>
-                    <SelectItem value="week">Últimos 7 días</SelectItem>
-                    <SelectItem value="month">Mes actual</SelectItem>
+                    <SelectItem value="may-2026">Mayo 2026</SelectItem>
+                    <SelectItem value="jun-2026">Junio 2026</SelectItem>
+                    <SelectItem value="q2-2026">Q2 2026</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Select defaultValue="all-centers">
+                <SelectTrigger className="h-8 w-[170px]">
+                  <SelectValue placeholder="Centro logístico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all-centers">Todas las sedes</SelectItem>
+                    <SelectItem value="ves">Villa El Salvador</SelectItem>
+                    <SelectItem value="lurin">Portada de Lurín</SelectItem>
+                    <SelectItem value="logiscity">Logiscity</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Select defaultValue="all-property-types">
+                <SelectTrigger className="h-8 w-[160px]">
+                  <SelectValue placeholder="Tipo propiedad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all-property-types">Todo tipo</SelectItem>
+                    <SelectItem value="warehouse">Almacén</SelectItem>
+                    <SelectItem value="yard">Patio</SelectItem>
+                    <SelectItem value="cold">Frío</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Select defaultValue="active-contracts">
+                <SelectTrigger className="h-8 w-[170px]">
+                  <SelectValue placeholder="Estado contractual" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="active-contracts">Vigente</SelectItem>
+                    <SelectItem value="all-contracts">Todos</SelectItem>
+                    <SelectItem value="signatures">En firmas</SelectItem>
+                    <SelectItem value="expired">No vigente</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Select defaultValue="all-currencies">
+                <SelectTrigger className="h-8 w-[120px]">
+                  <SelectValue placeholder="Moneda" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all-currencies">PEN + USD</SelectItem>
+                    <SelectItem value="pen">PEN</SelectItem>
+                    <SelectItem value="usd">USD</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -3495,7 +4013,7 @@ function DashboardView({
             blockId="flow-network"
             draggingBlockId={draggingBlockId}
             editMode={layoutEditMode}
-            label="Flujo y red"
+            label="Ocupación y contratos"
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
             onDragStart={handleDragStart}
@@ -3503,151 +4021,9 @@ function DashboardView({
             order={getBlockOrder("flow-network")}
             overBlockId={overBlockId}
           >
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)]">
-              <Card className="overflow-hidden py-0">
-                <Tabs className="gap-0" defaultValue="volumen">
-                  <CardHeader className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <RouteIcon />
-                        Flujo operativo semanal
-                      </CardTitle>
-                      <CardDescription>
-                        Ingresos, salidas y presión de backlog por día.
-                      </CardDescription>
-                    </div>
-                    <TabsList>
-                      <TabsTrigger value="volumen">Volumen</TabsTrigger>
-                      <TabsTrigger value="sla">SLA</TabsTrigger>
-                    </TabsList>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <TabsContent className="mt-0" value="volumen">
-                      <ChartContainer
-                        className="aspect-auto h-[285px] w-full"
-                        config={dashboardFlowConfig}
-                      >
-                        <AreaChart
-                          accessibilityLayer
-                          data={dashboardFlowData}
-                          margin={{ left: 0, right: 12, top: 10 }}
-                        >
-                          <CartesianGrid vertical={false} />
-                          <XAxis
-                            axisLine={false}
-                            dataKey="day"
-                            tickLine={false}
-                            tickMargin={8}
-                          />
-                          <YAxis
-                            axisLine={false}
-                            tickLine={false}
-                            tickMargin={8}
-                            width={38}
-                          />
-                          <ChartTooltip
-                            content={<ChartTooltipContent indicator="line" />}
-                          />
-                          <Area
-                            dataKey="ingreso"
-                            fill="var(--color-ingreso)"
-                            fillOpacity={0.16}
-                            stroke="var(--color-ingreso)"
-                            strokeWidth={2}
-                            type="natural"
-                          />
-                          <Area
-                            dataKey="salida"
-                            fill="var(--color-salida)"
-                            fillOpacity={0.1}
-                            stroke="var(--color-salida)"
-                            strokeWidth={2}
-                            type="natural"
-                          />
-                        </AreaChart>
-                      </ChartContainer>
-                    </TabsContent>
-                    <TabsContent className="mt-0" value="sla">
-                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                        <ChartContainer
-                          className="aspect-auto h-[285px] w-full"
-                          config={dashboardFlowConfig}
-                        >
-                          <AreaChart
-                            accessibilityLayer
-                            data={dashboardFlowData}
-                            margin={{ left: 0, right: 12, top: 10 }}
-                          >
-                            <CartesianGrid vertical={false} />
-                            <XAxis
-                              axisLine={false}
-                              dataKey="day"
-                              tickLine={false}
-                              tickMargin={8}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              domain={[90, 100]}
-                              tickLine={false}
-                              tickMargin={8}
-                              width={34}
-                            />
-                            <ChartTooltip
-                              content={<ChartTooltipContent indicator="line" />}
-                            />
-                            <Area
-                              dataKey="sla"
-                              fill="var(--color-sla)"
-                              fillOpacity={0.18}
-                              stroke="var(--color-sla)"
-                              strokeWidth={2}
-                              type="natural"
-                            />
-                          </AreaChart>
-                        </ChartContainer>
-                        <div className="flex flex-col justify-center gap-3 rounded-lg border bg-muted/20 p-4">
-                          <div>
-                            <p className="text-sm font-medium">Objetivo SLA</p>
-                            <p className="text-xs text-muted-foreground">
-                              Meta mensual contratada
-                            </p>
-                          </div>
-                          <div className="flex items-end gap-2">
-                            <span className="text-3xl font-medium">96.4%</span>
-                            <Badge variant="secondary">+1.8%</Badge>
-                          </div>
-                          <Progress value={96} />
-                          <p className="text-xs leading-relaxed text-muted-foreground">
-                            El SLA se sostiene por encima de la meta, pero Ate
-                            concentra las excepciones del día.
-                          </p>
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </CardContent>
-                </Tabs>
-              </Card>
-
-              <Card className="overflow-hidden py-0">
-                <CardHeader className="border-b p-4">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <ShieldCheckIcon />
-                    Salud de red
-                  </CardTitle>
-                  <CardDescription>
-                    Sedes activas, ocupación y pedidos del día.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4 p-4">
-                  {warehouseNetwork.map((site) => (
-                    <DashboardNetworkRow
-                      key={site.site}
-                      onAskAI={onAskAI}
-                      site={site}
-                    />
-                  ))}
-                </CardContent>
-              </Card>
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
+              <DashboardOccupancyByCenter onAskAI={onAskAI} />
+              <DashboardContractsPanel onAskAI={onAskAI} />
             </div>
           </DashboardReorderBlock>
 
@@ -3655,7 +4031,7 @@ function DashboardView({
             blockId="capacity-risks"
             draggingBlockId={draggingBlockId}
             editMode={layoutEditMode}
-            label="Capacidad y riesgos"
+            label="Ingresos e inventario"
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
             onDragStart={handleDragStart}
@@ -3663,85 +4039,9 @@ function DashboardView({
             order={getBlockOrder("capacity-risks")}
             overBlockId={overBlockId}
           >
-            <div className="grid gap-4 xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.05fr)]">
-              <Card className="overflow-hidden py-0">
-                <CardHeader className="border-b p-4">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <GaugeIcon />
-                    Capacidad por sede
-                  </CardTitle>
-                  <CardDescription>
-                    Ocupación de almacén y utilización de muelles.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <ChartContainer
-                    className="aspect-auto h-[300px] w-full"
-                    config={warehouseCapacityConfig}
-                  >
-                    <BarChart
-                      accessibilityLayer
-                      data={warehouseCapacityData}
-                      layout="vertical"
-                      margin={{ left: 10, right: 14, top: 8 }}
-                    >
-                      <CartesianGrid horizontal={false} />
-                      <XAxis
-                        axisLine={false}
-                        domain={[0, 100]}
-                        hide
-                        tickLine={false}
-                        type="number"
-                      />
-                      <YAxis
-                        axisLine={false}
-                        dataKey="site"
-                        tickLine={false}
-                        tickMargin={8}
-                        type="category"
-                        width={72}
-                      />
-                      <ChartTooltip
-                        content={<ChartTooltipContent indicator="line" />}
-                      />
-                      <Bar
-                        dataKey="ocupacion"
-                        fill="var(--color-ocupacion)"
-                        radius={5}
-                      />
-                      <Bar
-                        dataKey="muelles"
-                        fill="var(--color-muelles)"
-                        radius={5}
-                      />
-                    </BarChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden py-0">
-                <CardHeader className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <AlertTriangleIcon />
-                      Riesgos priorizados
-                    </CardTitle>
-                    <CardDescription>
-                      Bloqueos operativos con dueño y ventana de decisión.
-                    </CardDescription>
-                  </div>
-                  <Badge variant="destructive">3 activos</Badge>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3 p-4">
-                  {dashboardRisks.map((risk) => (
-                    <DashboardRiskItem
-                      key={risk.title}
-                      onAskAI={onAskAI}
-                      risk={risk}
-                    />
-                  ))}
-                </CardContent>
-              </Card>
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
+              <DashboardRevenuePanel />
+              <DashboardPropertiesPanel onAskAI={onAskAI} />
             </div>
           </DashboardReorderBlock>
 
@@ -3749,7 +4049,7 @@ function DashboardView({
             blockId="movements-forecast"
             draggingBlockId={draggingBlockId}
             editMode={layoutEditMode}
-            label="Movimientos y forecast"
+            label="Calidad de datos"
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
             onDragStart={handleDragStart}
@@ -3757,86 +4057,7 @@ function DashboardView({
             order={getBlockOrder("movements-forecast")}
             overBlockId={overBlockId}
           >
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
-              <Card className="overflow-hidden py-0">
-                <CardHeader className="border-b p-4">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <TruckIcon />
-                    Movimientos críticos
-                  </CardTitle>
-                  <CardDescription>
-                    Órdenes que impactan facturación, SLA o promesa comercial.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Orden</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Sede</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>ETA</TableHead>
-                        <TableHead className="text-right">Valor</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {criticalMovements.map((movement) => {
-                        const aiContext = `Movimiento crítico ${movement.order}: cliente ${movement.client}, sede ${movement.site}, estado ${movement.status}, ETA ${movement.eta}, valor ${movement.value}.`
-
-                        return (
-                          <TableRow className="group/data" key={movement.order}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <span>{movement.order}</span>
-                                <DashboardAskAIButton
-                                  context={aiContext}
-                                  onAskAI={onAskAI}
-                                />
-                              </div>
-                            </TableCell>
-                            <TableCell>{movement.client}</TableCell>
-                            <TableCell>{movement.site}</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  movement.status === "Observado"
-                                    ? "destructive"
-                                    : "secondary"
-                                }
-                              >
-                                {movement.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{movement.eta}</TableCell>
-                            <TableCell className="text-right font-medium">
-                              {movement.value}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden py-0">
-                <CardHeader className="border-b p-4">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <ClockIcon />
-                    Pronóstico 48 h
-                  </CardTitle>
-                  <CardDescription>
-                    Carga esperada por ventana operativa.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3 p-4">
-                  {forecastWindows.map((window) => (
-                    <DashboardForecastItem key={window.label} window={window} />
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
+            <DashboardDataQualityPanel onAskAI={onAskAI} />
           </DashboardReorderBlock>
         </div>
       </ScrollArea>
@@ -4051,9 +4272,21 @@ function DashboardMetricCard({
   const TrendIcon =
     metric.direction === "up" ? ArrowUpRightIcon : ArrowDownRightIcon
   const aiContext = `${metric.label}: ${metric.value}. ${metric.detail}. Variación ${metric.trend}.`
+  const statusVariant =
+    metric.status === "critical"
+      ? "destructive"
+      : metric.status === "attention"
+        ? "outline"
+        : "secondary"
 
   return (
-    <Card className="group/data overflow-hidden transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm">
+    <Card
+      className={cn(
+        "group/data overflow-hidden transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm",
+        metric.status === "critical" && "border-destructive/30",
+        metric.status === "attention" && "border-muted-foreground/30"
+      )}
+    >
       <CardContent className="flex flex-col gap-4 p-4">
         <div className="flex items-start justify-between gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/30">
@@ -4061,7 +4294,7 @@ function DashboardMetricCard({
           </span>
           <div className="flex items-center gap-1.5">
             <Badge
-              variant={metric.direction === "up" ? "secondary" : "outline"}
+              variant={statusVariant}
             >
               <TrendIcon data-icon="inline-start" />
               {metric.trend}
@@ -4083,104 +4316,356 @@ function DashboardMetricCard({
   )
 }
 
-function DashboardNetworkRow({
+function DashboardOccupancyByCenter({
   onAskAI,
-  site,
 }: {
   onAskAI: (context: string) => void
-  site: (typeof warehouseNetwork)[number]
 }) {
-  const aiContext = `Sede ${site.site}, región ${site.region}: ocupación ${site.occupancy}%, SLA ${site.sla}, ${site.orders} pedidos, estado ${site.state}.`
-
   return (
-    <div className="group/data flex flex-col gap-2 rounded-lg border bg-background p-3 transition-[background-color,box-shadow] duration-300 ease-out hover:bg-muted/20 hover:shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{site.site}</p>
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPinIcon />
-            {site.region}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Badge variant={site.state === "Normal" ? "secondary" : "outline"}>
-            {site.state}
-          </Badge>
-          <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
-        </div>
-      </div>
-      <Progress value={site.occupancy} />
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div>
-          <p className="text-muted-foreground">Ocupación</p>
-          <p className="font-medium">{site.occupancy}%</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">SLA</p>
-          <p className="font-medium">{site.sla}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Pedidos</p>
-          <p className="font-medium">{site.orders}</p>
-        </div>
-      </div>
+    <Card className="overflow-hidden py-0">
+      <CardHeader className="border-b p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <GaugeIcon />
+          Ocupación por centro logístico
+        </CardTitle>
+        <CardDescription>
+          Total, arrendado, disponible, contratos e ingreso mensual estimado.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4">
+        {logisticsCenterOccupancy.map((site) => {
+          const aiContext = `Centro ${site.site}: ocupación ${site.occupancy}%, total ${site.totalSqm} m², ocupado ${site.occupiedSqm} m², disponible ${site.availableSqm} m², contratos activos ${site.contracts}, ingreso mensual ${site.monthlyRevenue}, estado ${site.state}.`
+
+          return (
+            <div
+              className="group/data flex flex-col gap-3 rounded-lg border bg-background p-3 transition-[background-color,box-shadow] duration-300 ease-out hover:bg-muted/20 hover:shadow-sm"
+              key={site.site}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{site.site}</p>
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPinIcon />
+                    {site.totalSqm} m² operativos
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Badge
+                    variant={
+                      site.state === "Crítico"
+                        ? "destructive"
+                        : site.state === "Atención"
+                          ? "outline"
+                          : "secondary"
+                    }
+                  >
+                    {site.state}
+                  </Badge>
+                  <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
+                </div>
+              </div>
+              <Progress value={site.occupancy} />
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                <DashboardMiniStat label="Ocupación" value={`${site.occupancy}%`} />
+                <DashboardMiniStat label="Ocupado" value={site.occupiedSqm} />
+                <DashboardMiniStat label="Disponible" value={site.availableSqm} />
+                <DashboardMiniStat label="Contratos" value={`${site.contracts}`} />
+                <DashboardMiniStat label="Ingreso" value={site.monthlyRevenue} />
+              </div>
+            </div>
+          )
+        })}
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashboardMiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-muted/25 p-2">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="truncate text-xs font-medium">{value}</p>
     </div>
   )
 }
 
-function DashboardRiskItem({
+function DashboardContractsPanel({
   onAskAI,
-  risk,
 }: {
   onAskAI: (context: string) => void
-  risk: (typeof dashboardRisks)[number]
 }) {
-  const aiContext = `Riesgo: ${risk.title}. ${risk.detail} Responsable: ${risk.owner}. Severidad ${risk.severity}. Deadline ${risk.eta}.`
-
   return (
-    <div className="group/data grid gap-3 rounded-lg border bg-background p-3 transition-[background-color,box-shadow] duration-300 ease-out hover:bg-muted/20 hover:shadow-sm sm:grid-cols-[1fr_auto]">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-medium">{risk.title}</p>
-          <Badge variant={risk.severity === "Alta" ? "destructive" : "outline"}>
-            {risk.severity}
-          </Badge>
+    <Card className="overflow-hidden py-0">
+      <CardHeader className="border-b p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <RouteIcon />
+          Contratos y vencimientos
+        </CardTitle>
+        <CardDescription>
+          Pipeline contractual y clientes que requieren renovación prioritaria.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 p-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {contractPipeline.map((item) => (
+            <div className="rounded-lg border bg-background p-3" key={item.state}>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-xs font-medium">{item.state}</p>
+                  <p className="text-[11px] text-muted-foreground">{item.value}</p>
+                </div>
+                <Badge variant="outline">{item.count}</Badge>
+              </div>
+              <Progress className="mt-3" value={item.progress} />
+            </div>
+          ))}
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {risk.detail}
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Sede</TableHead>
+                <TableHead>Fecha fin</TableHead>
+                <TableHead>M²</TableHead>
+                <TableHead>Ingreso</TableHead>
+                <TableHead>Renov.</TableHead>
+                <TableHead>Riesgo</TableHead>
+                <TableHead>Responsable</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {expiringContracts.map((contract) => {
+                const aiContext = `Contrato por vencer: ${contract.client}, sede ${contract.site}, fecha fin ${contract.endDate}, ${contract.sqm} m², ingreso mensual ${contract.revenue}, renovación automática ${contract.autoRenewal}, riesgo ${contract.risk}, responsable ${contract.owner}.`
+
+                return (
+                  <TableRow className="group/data" key={contract.client}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{contract.client}</span>
+                        <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
+                      </div>
+                    </TableCell>
+                    <TableCell>{contract.site}</TableCell>
+                    <TableCell>{contract.endDate}</TableCell>
+                    <TableCell>{contract.sqm}</TableCell>
+                    <TableCell>{contract.revenue}</TableCell>
+                    <TableCell>{contract.autoRenewal}</TableCell>
+                    <TableCell>
+                      <Badge variant={contract.risk === "Alto" ? "destructive" : contract.risk === "Medio" ? "outline" : "secondary"}>
+                        {contract.risk}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{contract.owner}</TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashboardRevenuePanel() {
+  return (
+    <Card className="overflow-hidden py-0">
+      <CardHeader className="border-b p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <TrendingUpIcon />
+          Ingresos y rentabilidad
+        </CardTitle>
+        <CardDescription>
+          Ingreso mensual por sede, renta por m², descuentos, garantías y moneda.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 p-4">
+        <ChartContainer className="aspect-auto h-[240px] w-full" config={revenueChartConfig}>
+          <BarChart accessibilityLayer data={monthlyRevenueByCenter} margin={{ left: 0, right: 12, top: 10 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis axisLine={false} dataKey="center" tickLine={false} tickMargin={8} />
+            <YAxis axisLine={false} tickLine={false} tickMargin={8} width={38} />
+            <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+            <Bar dataKey="pen" fill="var(--color-pen)" radius={5} />
+            <Bar dataKey="usd" fill="var(--color-usd)" radius={5} />
+          </BarChart>
+        </ChartContainer>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {profitabilitySignals.map((signal) => (
+            <div className="rounded-lg border bg-background p-3" key={signal.label}>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-medium">{signal.label}</p>
+                <Badge variant={signal.status === "Crítico" ? "destructive" : signal.status === "Atención" ? "outline" : "secondary"}>
+                  {signal.status}
+                </Badge>
+              </div>
+              <p className="mt-2 text-lg font-medium">{signal.value}</p>
+              <p className="text-xs text-muted-foreground">{signal.detail}</p>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente top</TableHead>
+                <TableHead>Sede</TableHead>
+                <TableHead>M²</TableHead>
+                <TableHead className="text-right">Ingreso</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {topClientsByRevenue.map((client) => (
+                <TableRow key={client.client}>
+                  <TableCell className="font-medium">{client.client}</TableCell>
+                  <TableCell>{client.center}</TableCell>
+                  <TableCell>{client.sqm}</TableCell>
+                  <TableCell className="text-right font-medium">{client.revenue}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashboardPropertiesPanel({
+  onAskAI,
+}: {
+  onAskAI: (context: string) => void
+}) {
+  return (
+    <Card className="overflow-hidden py-0">
+      <CardHeader className="border-b p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <WarehouseIcon />
+          Propiedades y disponibilidad
+        </CardTitle>
+        <CardDescription>
+          Inventario comercial por estado, subestado, m² y disponibilidad real.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 p-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {propertyInventorySummary.map((item) => (
+            <div className="rounded-lg border bg-background p-3" key={item.label}>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-medium">{item.label}</p>
+                <Badge variant="outline">{item.count}</Badge>
+              </div>
+              <p className="mt-2 text-lg font-medium">{item.sqm} m²</p>
+            </div>
+          ))}
+        </div>
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Sede</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>M²</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Subestado</TableHead>
+                <TableHead>Disponible</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {propertyAvailabilityRows.map((property) => {
+                const aiContext = `Propiedad ${property.code} ${property.name}, sede ${property.site}, tipo ${property.type}, ${property.sqm} m², estado ${property.state}, subestado ${property.substate}, disponible para comercialización ${property.available}.`
+
+                return (
+                  <TableRow className="group/data" key={property.code}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{property.code}</span>
+                        <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
+                      </div>
+                    </TableCell>
+                    <TableCell>{property.name}</TableCell>
+                    <TableCell>{property.site}</TableCell>
+                    <TableCell>{property.type}</TableCell>
+                    <TableCell>{property.sqm}</TableCell>
+                    <TableCell>
+                      <Badge variant={property.state === "Disponible" ? "secondary" : "outline"}>
+                        {property.state}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{property.substate}</TableCell>
+                    <TableCell>
+                      <Badge variant={property.available === "Sí" ? "secondary" : "outline"}>
+                        {property.available}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashboardDataQualityPanel({
+  onAskAI,
+}: {
+  onAskAI: (context: string) => void
+}) {
+  return (
+    <Card className="overflow-hidden py-0">
+      <CardHeader className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangleIcon />
+            Calidad y consistencia de datos
+          </CardTitle>
+          <CardDescription>
+            Problemas que pueden afectar ocupación, m² vendibles, revenue y riesgos contractuales.
+          </CardDescription>
+        </div>
+        <Badge variant="destructive">6 críticos / altos</Badge>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4 lg:grid-cols-2 xl:grid-cols-3">
+        {dataQualityAlerts.map((alert) => {
+          const aiContext = `Calidad de datos: ${alert.issue}. Casos ${alert.count}. Impacto: ${alert.impact}. Responsable: ${alert.owner}. Severidad ${alert.severity}.`
+
+          return (
+            <div
+              className="group/data flex flex-col gap-3 rounded-lg border bg-background p-3 transition-[background-color,box-shadow] duration-300 ease-out hover:bg-muted/20 hover:shadow-sm"
+              key={alert.issue}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{alert.issue}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {alert.impact}
+                  </p>
+                </div>
+                <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={alert.severity === "Crítico" ? "destructive" : "outline"}>
+                  {alert.severity}
+                </Badge>
+                <Badge variant="secondary">{alert.count} registros</Badge>
+                <span className="text-xs text-muted-foreground">{alert.owner}</span>
+              </div>
+            </div>
+          )
+        })}
+      </CardContent>
+      <CardFooter className="border-t p-4">
+        <p className="text-xs text-muted-foreground">
+          Prioridad: limpiar maestro de propiedades, enlazar adendas con contrato origen y marcar última versión antes de exportar el comité comercial.
         </p>
-      </div>
-      <div className="flex min-w-28 items-start justify-between gap-2 text-xs text-muted-foreground sm:justify-end sm:text-right">
-        <div className="flex flex-col gap-1">
-          <span>{risk.owner}</span>
-          <span className="font-medium text-foreground">{risk.eta}</span>
-        </div>
-        <DashboardAskAIButton context={aiContext} onAskAI={onAskAI} />
-      </div>
-    </div>
-  )
-}
-
-function DashboardForecastItem({
-  window,
-}: {
-  window: (typeof forecastWindows)[number]
-}) {
-  return (
-    <div className="flex flex-col gap-2 rounded-lg border bg-background p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium">{window.label}</p>
-          <p className="text-xs text-muted-foreground">{window.detail}</p>
-        </div>
-        <p className="text-lg font-medium">{window.value}</p>
-      </div>
-      <Progress value={window.load} />
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Carga proyectada</span>
-        <span>{window.load}%</span>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   )
 }
 
