@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NVIDIA_API_KEY", "NVIDIA_API_URL", "NVIDIA_MODEL"],
   "ui": "tui",
   "tasks": {
     "build": {

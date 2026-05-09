@@ -1,5 +1,5 @@
-import { AiChatShell } from "@/components/ai-chat-shell"
+import { LoginGate } from "@/components/login-gate"
 
 export default function Page() {
-  return <AiChatShell />
+  return <LoginGate />
 }

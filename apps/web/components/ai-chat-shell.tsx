@@ -29,6 +29,7 @@ import {
   LayoutDashboardIcon,
   LayoutGridIcon,
   LibraryIcon,
+  LoaderCircleIcon,
   MapPinIcon,
   MoreHorizontalIcon,
   MicIcon,
@@ -153,6 +154,7 @@ import { NotificationsView } from "./notifications-view"
 
 type ChatGroup = "Recientes" | "Ayer"
 type MessageRole = "user" | "assistant"
+type MessageStatus = "thinking" | "typing" | "error"
 type WorkspaceView =
   | "dashboard"
   | "chat"
@@ -173,6 +175,7 @@ type ChatMessage = {
   role: MessageRole
   content: string
   at: string
+  status?: MessageStatus
 }
 
 type Chat = {
@@ -234,8 +237,14 @@ type KnowledgeSource = {
   recommendedUse: string
 }
 
-const defaultModel = "Claude 3.5 sonnet"
-const models = [defaultModel, "GPT-4.1", "Gemini 1.5 Pro"]
+const defaultModel = "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+const modelOptions = [
+  {
+    label: "NVIDIA Nemotron Super 49B",
+    value: defaultModel,
+  },
+]
+const models = modelOptions.map((option) => option.value)
 
 const initialChats: Chat[] = [
   {
@@ -418,11 +427,7 @@ const promptActions: PromptAction[] = [
     prompt:
       "Escribe un componente React limpio para esta idea con props tipadas.",
   },
-  {
-    label: "Diseño",
-    icon: PaletteIcon,
-    prompt: "Crea tres direcciones de UI y recomienda la más sólida.",
-  },
+
   {
     label: "Investigación",
     icon: Globe2Icon,
@@ -1013,38 +1018,16 @@ function makeTitle(content: string) {
   return `${compact.slice(0, 42)}...`
 }
 
-function makeMockReply(
-  content: string,
-  model: string,
-  mode: string,
-  attachments: number
-) {
-  const attachmentText =
-    attachments > 0
-      ? ` También consideré ${attachments} archivo${attachments === 1 ? "" : "s"} de prueba.`
-      : ""
-
-  if (mode === "Código") {
-    return `Con ${model}, lo convertiría en una implementación pequeña y tipada: define primero el modelo de datos, mantén el estado de UI local y haz que cada control actualice de inmediato el dataset de prueba.${attachmentText}`
-  }
-
-  if (mode === "Diseño") {
-    return `Con ${model}, la dirección más sólida es un espacio de trabajo compacto: filas de historial más ajustadas, estado activo claro y un compositor responsive que mantenga la acción principal al alcance en móvil.${attachmentText}`
-  }
-
-  if (mode === "Investigación") {
-    return `Con ${model}, separaría hechos confirmados, supuestos probables y verificaciones de seguimiento. Para esta simulación, la respuesta clave es: ${content}.${attachmentText}`
-  }
-
-  if (mode === "Resumen") {
-    return `Resumen de ${model}: la solicitud es mantener la interacción funcional, reducir el peso visual de la barra lateral y conservar el layout del chat IA en escritorio y móvil.${attachmentText}`
-  }
-
-  return `Con ${model}, aquí tienes una respuesta práctica: comienza por la intención principal, mantén la respuesta concisa y convierte la siguiente acción en algo que la interfaz pueda ejecutar de inmediato.${attachmentText}`
-}
-
 function makeDashboardInsightReply(context: string) {
   return `Lectura ejecutiva: ${context} La decisión debe evaluarse por impacto económico, SLA comprometido y responsable directo. Mi recomendación es confirmar el dato fuente, priorizar el bloqueo si afecta ingresos o promesa comercial, y pedir una acción con hora límite y dueño único para evitar que quede como alerta sin cierre.`
+}
+
+function getModelLabel(value: string) {
+  return modelOptions.find((option) => option.value === value)?.label ?? value
+}
+
+function normalizeModel(value: string | undefined) {
+  return models.includes(value ?? "") ? (value ?? defaultModel) : defaultModel
 }
 
 function normalizeThemePreference(value: string | undefined): ThemePreference {
@@ -1064,6 +1047,7 @@ export function AiChatShell() {
   const [draft, setDraft] = React.useState("")
   const [model, setModel] = React.useState(defaultModel)
   const [mode, setMode] = React.useState("General")
+  const [isSending, setIsSending] = React.useState(false)
   const [activeView, setActiveView] = React.useState<WorkspaceView>("chat")
   const [chatQuery, setChatQuery] = React.useState("")
   const [desktopSidebarOpen, setDesktopSidebarOpen] = React.useState(true)
@@ -1133,7 +1117,7 @@ export function AiChatShell() {
     const chat = chats.find((item) => item.id === chatId)
     setActiveView("chat")
     setSelectedChatId(chatId)
-    setModel(chat?.model ?? defaultModel)
+    setModel(normalizeModel(chat?.model))
     setMobileSidebarOpen(false)
   }
 
@@ -1239,7 +1223,68 @@ export function AiChatShell() {
     requestAnimationFrame(() => draftRef.current?.focus())
   }
 
-  function handleSend() {
+  function updateAssistantMessage(
+    chatId: string,
+    messageId: string,
+    patch: Pick<ChatMessage, "content"> & {
+      at?: string
+      status?: MessageStatus
+    }
+  ) {
+    setChats((current) =>
+      current.map((chat) =>
+        chat.id === chatId
+          ? {
+              ...chat,
+              updatedAt: patch.at ?? chat.updatedAt,
+              messages: chat.messages.map((message) =>
+                message.id === messageId
+                  ? {
+                      ...message,
+                      ...patch,
+                    }
+                  : message
+              ),
+            }
+          : chat
+      )
+    )
+  }
+
+  function revealAssistantMessage(
+    chatId: string,
+    messageId: string,
+    fullContent: string,
+    doneStatus?: MessageStatus
+  ) {
+    return new Promise<void>((resolve) => {
+      const content = fullContent.trim() || "No recibí contenido de NVIDIA."
+      let index = 0
+      const chunkSize = Math.max(1, Math.ceil(content.length / 90))
+
+      function step() {
+        index = Math.min(content.length, index + chunkSize)
+        const isDone = index >= content.length
+
+        updateAssistantMessage(chatId, messageId, {
+          at: makeTime(),
+          content: content.slice(0, index),
+          status: isDone ? doneStatus : "typing",
+        })
+
+        if (isDone) {
+          resolve()
+          return
+        }
+
+        window.setTimeout(step, 18)
+      }
+
+      window.setTimeout(step, 180)
+    })
+  }
+
+  async function handleSend() {
     const content = draft.trim()
 
     if (!content) {
@@ -1247,22 +1292,34 @@ export function AiChatShell() {
       return
     }
 
+    if (isSending) {
+      return
+    }
+
     const timestamp = makeTime()
-    const reply = makeMockReply(content, model, mode, attachments)
-    const messages: ChatMessage[] = [
-      {
-        id: makeId("user"),
-        role: "user",
-        content,
-        at: timestamp,
-      },
-      {
-        id: makeId("assistant"),
-        role: "assistant",
-        content: reply,
-        at: timestamp,
-      },
-    ]
+    const activeModel = normalizeModel(model)
+    const chatId = selectedChatId ?? makeId("chat")
+    const userMessage: ChatMessage = {
+      id: makeId("user"),
+      role: "user",
+      content,
+      at: timestamp,
+    }
+    const assistantMessage: ChatMessage = {
+      id: makeId("assistant"),
+      role: "assistant",
+      content: "",
+      at: timestamp,
+      status: "thinking",
+    }
+    const messages = [userMessage, assistantMessage]
+    const requestMessages = [...(selectedChat?.messages ?? []), userMessage]
+      .filter((message): message is ChatMessage => Boolean(message?.content))
+      .slice(-12)
+      .map((message) => ({
+        content: message.content,
+        role: message.role,
+      }))
 
     if (selectedChatId) {
       setChats((current) =>
@@ -1271,7 +1328,7 @@ export function AiChatShell() {
             ? {
                 ...chat,
                 group: "Recientes",
-                model,
+                model: activeModel,
                 updatedAt: timestamp,
                 messages: [...chat.messages, ...messages],
               }
@@ -1279,24 +1336,68 @@ export function AiChatShell() {
         )
       )
     } else {
-      const id = makeId("chat")
-      setSelectedChatId(id)
+      setSelectedChatId(chatId)
       setChats((current) => [
         {
-          id,
+          id: chatId,
           title: makeTitle(content),
           group: "Recientes",
           category: mode,
           updatedAt: timestamp,
-          model,
+          model: activeModel,
           messages,
         },
         ...current,
       ])
     }
 
+    setModel(activeModel)
     setDraft("")
     setAttachments(0)
+    setIsSending(true)
+
+    try {
+      const response = await fetch("/api/chat", {
+        body: JSON.stringify({
+          attachments,
+          messages: requestMessages,
+          mode,
+          model: activeModel,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      })
+      const payload = (await response.json().catch(() => ({}))) as {
+        content?: string
+        error?: string
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "No se pudo obtener respuesta de NVIDIA."
+        )
+      }
+
+      await revealAssistantMessage(
+        chatId,
+        assistantMessage.id,
+        payload.content ?? ""
+      )
+    } catch (error) {
+      await revealAssistantMessage(
+        chatId,
+        assistantMessage.id,
+        `No pude obtener la respuesta de NVIDIA: ${
+          error instanceof Error ? error.message : "error desconocido"
+        }`,
+        "error"
+      )
+    } finally {
+      setIsSending(false)
+      requestAnimationFrame(() => draftRef.current?.focus())
+    }
   }
 
   const activeSection = activeView === "dashboard" ? "dashboard" : "ai"
@@ -1369,6 +1470,7 @@ export function AiChatShell() {
                   onNewChat={handleNewChat}
                   onPrompt={handlePrompt}
                   onSend={handleSend}
+                  isSending={isSending}
                   onThemeChange={setTheme}
                   onToggleVoice={() => setVoiceEnabled((value) => !value)}
                   promptActions={promptActions}
@@ -2852,7 +2954,7 @@ function ChatSettingsView({
                           <SelectGroup>
                             {models.map((item) => (
                               <SelectItem key={item} value={item}>
-                                {item}
+                                {getModelLabel(item)}
                               </SelectItem>
                             ))}
                           </SelectGroup>
@@ -2901,6 +3003,7 @@ function ChatWorkspace({
   activeView,
   chat,
   draft,
+  isSending,
   mode,
   model,
   onAttach,
@@ -2920,6 +3023,7 @@ function ChatWorkspace({
   activeView: WorkspaceView
   chat: Chat | null
   draft: string
+  isSending: boolean
   mode: string
   model: string
   onAttach: () => void
@@ -2966,6 +3070,10 @@ function ChatWorkspace({
     }
 
     recognition.onerror = (event: any) => {
+      if (event.error === "aborted") {
+        return
+      }
+
       console.error("Error en reconocimiento de voz:", event.error)
       if (
         event.error === "not-allowed" ||
@@ -3025,7 +3133,7 @@ function ChatWorkspace({
               {chat.title}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {chat.category} - {chat.model}
+              {chat.category} - {getModelLabel(chat.model)}
             </p>
           </div>
           <Button onClick={onNewChat} size="sm" variant="outline">
@@ -3094,6 +3202,7 @@ function ChatWorkspace({
           <ChatComposer
             attachments={attachments}
             draft={draft}
+            isSending={isSending}
             mode={mode}
             model={model}
             onAttach={onAttach}
@@ -3174,6 +3283,7 @@ function ChatWorkspace({
             attachments={attachments}
             className="mt-8 sm:mt-10"
             draft={draft}
+            isSending={isSending}
             mode={mode}
             model={model}
             onAttach={onAttach}
@@ -4074,8 +4184,47 @@ function DashboardForecastItem({
   )
 }
 
+function renderInlineMarkdown(content: string) {
+  const nodes: React.ReactNode[] = []
+  let cursor = 0
+  let key = 0
+
+  while (cursor < content.length) {
+    const start = content.indexOf("**", cursor)
+
+    if (start === -1) {
+      nodes.push(content.slice(cursor))
+      break
+    }
+
+    const end = content.indexOf("**", start + 2)
+
+    if (end === -1) {
+      nodes.push(content.slice(cursor))
+      break
+    }
+
+    if (start > cursor) {
+      nodes.push(content.slice(cursor, start))
+    }
+
+    nodes.push(
+      <strong className="font-semibold" key={`strong-${key}`}>
+        {content.slice(start + 2, end)}
+      </strong>
+    )
+    key += 1
+    cursor = end + 2
+  }
+
+  return nodes
+}
+
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user"
+  const isThinking = message.status === "thinking"
+  const isTyping = message.status === "typing"
+  const hasError = message.status === "error"
 
   return (
     <div
@@ -4094,14 +4243,33 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           "max-w-[min(78%,42rem)] rounded-lg px-3 py-2 text-sm leading-relaxed",
           isUser
             ? "bg-primary text-primary-foreground"
-            : "border bg-background shadow-sm"
+            : "border bg-background shadow-sm",
+          hasError && "border-destructive/50 text-destructive"
         )}
       >
-        <p>{message.content}</p>
+        {isThinking ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <BrainCircuitIcon className="animate-pulse" />
+            <span>Obteniendo respuesta</span>
+            <span className="flex items-center gap-1" aria-hidden>
+              <span className="size-1 [animation:bounce_1.1s_infinite] rounded-full bg-current opacity-40" />
+              <span className="size-1 [animation:bounce_1.1s_infinite] rounded-full bg-current opacity-60 [animation-delay:120ms]" />
+              <span className="size-1 [animation:bounce_1.1s_infinite] rounded-full bg-current opacity-80 [animation-delay:240ms]" />
+            </span>
+          </div>
+        ) : (
+          <p className="whitespace-pre-wrap">
+            {renderInlineMarkdown(message.content)}
+            {isTyping ? (
+              <span className="ml-0.5 inline-block h-4 w-px translate-y-0.5 animate-pulse bg-current" />
+            ) : null}
+          </p>
+        )}
         <span
           className={cn(
             "mt-1 block text-[10px]",
-            isUser ? "text-primary-foreground/70" : "text-muted-foreground"
+            isUser ? "text-primary-foreground/70" : "text-muted-foreground",
+            hasError && "text-destructive/80"
           )}
         >
           {message.at}
@@ -4115,6 +4283,7 @@ function ChatComposer({
   attachments,
   className,
   draft,
+  isSending,
   mode,
   model,
   onAttach,
@@ -4128,6 +4297,7 @@ function ChatComposer({
   attachments: number
   className?: string
   draft: string
+  isSending: boolean
   mode: string
   model: string
   onAttach: () => void
@@ -4149,7 +4319,19 @@ function ChatComposer({
         <InputGroupText className="min-w-0 gap-2 text-xs text-foreground">
           <span className="truncate">Razonamiento empresarial inteligente</span>
 
-          {mode !== "General" ? (
+          {isSending ? (
+            <Badge
+              className="ml-auto hidden h-5 gap-1 text-[10px] sm:inline-flex"
+              variant="secondary"
+            >
+              <LoaderCircleIcon
+                aria-hidden
+                className="animate-spin"
+                data-icon="inline-start"
+              />
+              Pensando
+            </Badge>
+          ) : mode !== "General" ? (
             <Badge
               className="ml-auto hidden h-5 text-[10px] sm:inline-flex"
               variant="outline"
@@ -4169,6 +4351,7 @@ function ChatComposer({
             onSend()
           }
         }}
+        disabled={isSending}
         placeholder="Pregúntame lo que necesites..."
         ref={textareaRef}
         value={draft}
@@ -4179,6 +4362,7 @@ function ChatComposer({
       >
         <InputGroupButton
           aria-label="Adjuntar archivo"
+          disabled={isSending}
           onClick={onAttach}
           size="icon-sm"
           variant="ghost"
@@ -4194,12 +4378,13 @@ function ChatComposer({
           <DropdownMenuTrigger asChild>
             <Button
               className="h-9 min-w-0 rounded-full px-2 transition-[background-color,color,box-shadow,transform] duration-200 ease-out hover:-translate-y-px sm:px-3"
+              disabled={isSending}
               size="sm"
               variant="outline"
             >
               <Globe2Icon data-icon="inline-start" />
               <span className="hidden max-w-36 truncate sm:inline">
-                {model}
+                {getModelLabel(model)}
               </span>
               <ChevronDownIcon data-icon="inline-end" />
             </Button>
@@ -4211,7 +4396,7 @@ function ChatComposer({
                   key={item}
                   onClick={() => onModelChange(item)}
                 >
-                  {item}
+                  {getModelLabel(item)}
                   {item === model ? <CheckIcon className="ml-auto" /> : null}
                 </DropdownMenuItem>
               ))}
@@ -4226,6 +4411,7 @@ function ChatComposer({
               voiceEnabled && "bg-muted"
             )}
             onClick={onToggleVoice}
+            disabled={isSending}
             size="icon-sm"
             variant="outline"
           >
@@ -4234,11 +4420,15 @@ function ChatComposer({
           <Button
             aria-label="Enviar mensaje"
             className="ai-send-button rounded-full transition-[background-color,box-shadow,transform] duration-200 ease-out enabled:hover:-translate-y-px enabled:hover:shadow-sm"
-            disabled={!draft.trim()}
+            disabled={!draft.trim() || isSending}
             onClick={onSend}
             size="icon-sm"
           >
-            <ArrowUpIcon />
+            {isSending ? (
+              <LoaderCircleIcon className="animate-spin" />
+            ) : (
+              <ArrowUpIcon />
+            )}
           </Button>
         </InputGroupText>
       </InputGroupAddon>
