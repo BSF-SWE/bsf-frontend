@@ -49,6 +49,7 @@ import {
   SunIcon,
   TrendingUpIcon,
   UploadIcon,
+  Users2Icon,
   WarehouseIcon,
   ZoomInIcon,
   ZoomOutIcon,
@@ -158,6 +159,7 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import { ManagerNotifications } from "./manager-notifications"
 import { NotificationsView } from "./notifications-view"
+import { UsersView } from "./users-view"
 
 type ChatGroup = "Recientes" | "Ayer"
 type MessageRole = "user" | "assistant"
@@ -168,6 +170,7 @@ type WorkspaceView =
   | "knowledge"
   | "settings"
   | "notifications"
+  | "users"
 type DashboardBlockId =
   | "metrics"
   | "decision"
@@ -1350,6 +1353,11 @@ export function AiChatShell() {
     setMobileSidebarOpen(false)
   }
 
+  function handleOpenUsers() {
+    setActiveView("users")
+    setMobileSidebarOpen(false)
+  }
+
   function handleOpenSettings() {
     setActiveView("settings")
     setMobileSidebarOpen(false)
@@ -1552,6 +1560,7 @@ export function AiChatShell() {
           setTheme(resolvedTheme === "dark" ? "light" : "dark")
         }
         onOpenNotifications={() => setActiveView("notifications")}
+        onOpenUsers={handleOpenUsers}
         theme={resolvedTheme}
       />
 
@@ -1661,6 +1670,7 @@ function TopBar({
   onToggleSidebar,
   onToggleTheme,
   onOpenNotifications,
+  onOpenUsers,
   theme,
 }: {
   activeSection: "dashboard" | "ai"
@@ -1671,6 +1681,7 @@ function TopBar({
   onToggleSidebar: () => void
   onToggleTheme: () => void
   onOpenNotifications: () => void
+  onOpenUsers: () => void
   theme?: string
 }) {
   const [mounted, setMounted] = React.useState(false)
@@ -1722,6 +1733,7 @@ function TopBar({
       </div>
 
       <div className="ml-auto flex h-full items-center gap-1 sm:gap-1.5">
+        <TopIcon icon={Users2Icon} label="Usuarios" onClick={onOpenUsers} />
         <ManagerNotifications onViewAll={onOpenNotifications} />
         <TopIcon icon={ThemeIcon} label="Tema" onClick={onToggleTheme} />
 
@@ -2465,7 +2477,7 @@ function KnowledgeBaseView() {
                       <DialogHeader>
                         <DialogTitle>Nueva carpeta</DialogTitle>
                         <DialogDescription>
-                          Creá un espacio para ordenar recursos por equipo,
+                          Crea un espacio para ordenar recursos por equipo,
                           sede o proceso.
                         </DialogDescription>
                       </DialogHeader>
@@ -3587,6 +3599,10 @@ function ChatWorkspace({
 
   if (activeView === "notifications") {
     return <NotificationsView themePreference={themePreference} />
+  }
+
+  if (activeView === "users") {
+    return <UsersView />
   }
 
   if (chat) {

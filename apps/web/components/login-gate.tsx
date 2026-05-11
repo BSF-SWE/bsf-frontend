@@ -3,7 +3,6 @@
 import * as React from "react"
 import Image from "next/image"
 import {
-  KeyRoundIcon,
   MapPinIcon,
   MoonIcon,
   RouteIcon,
@@ -162,7 +161,7 @@ export function LoginGate() {
                     Bienvenido
                   </CardTitle>
                   <CardDescription className="mx-auto max-w-sm leading-6">
-                    Accedé al entorno de inteligencia operativa con tu identidad
+                    Accede al entorno de inteligencia operativa con tu identidad
                     corporativa.
                   </CardDescription>
                 </div>
@@ -176,8 +175,24 @@ export function LoginGate() {
                   className="h-12 w-full justify-center border-border text-sm font-semibold tracking-[0.16em] uppercase"
                   onClick={handleKeycloakContinue}
                 >
-                  <KeyRoundIcon data-icon="inline-start" />
-                  Continuar con Keycloak
+                  <span
+                    data-icon="inline-start"
+                    className="inline-flex size-4 items-center justify-center"
+                    aria-hidden
+                  >
+                    <svg
+                      className="size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect x="2" y="2" width="9" height="9" rx="1" fill="#F25022" />
+                      <rect x="13" y="2" width="9" height="9" rx="1" fill="#7FBA00" />
+                      <rect x="2" y="13" width="9" height="9" rx="1" fill="#00A4EF" />
+                      <rect x="13" y="13" width="9" height="9" rx="1" fill="#FFB900" />
+                    </svg>
+                  </span>
+                  Continúa con Microsoft
                 </Button>
               </CardContent>
 
